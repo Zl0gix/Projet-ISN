@@ -4,51 +4,50 @@ from pprint import *
 
 
 def tir_joueur(Grid, car, ships):
-    try:
-        assert 2 <= len(car) <= 3
-        lettre = car[0].upper()
-        Nombre = car[1:]
-        # Conversion du car lettre en nombre
-        for i in range(10):
-            if lettre == lettres[i]:
-                x = i
-        y = int(Nombre) - 1
-        assert 0 <= x <= 9
-        assert 0 <= y <= 9
-        Indic.config(text="Coordonées acceptées")
-        ship_tag = ""
-        print 'Je suis avant le check de grille'
-        if Grid[x][y] == 1:
-            boat_index = 0 
-            for b in range(len(ships)):
-                for p in range(len(ships[b])):
-                    if (ships[b][p][0] == x+1) and (ships[b][p][1] == y+1):
-                        print "je suis avant les checks de deja touché"
-                        if ships[b][p][2] == 1:
-                            print "pas touché"
-                            boat_index = b
-                            ship_tag = IAships_name[b]
-                            ships[b][p][2] = 0
-                            display_case(Grilles, "IA", x + 1, y + 1, 3, ship_tag)
-                            
-                        else:
-                            print "deja touché"
-                            Indic.config(text="Vous avez déjà tiré ici et vous aviez touché !\nDommage, vous perdez un tour")
-                            return                        
-            pts_coule = 0
-            for p in range(len(ships[boat_index])):
-                pts_coule += ships[boat_index][p][2]
-            if pts_coule == 0:
-                Grilles.itemconfig(ship_tag, fill="red")
-                Indic.config(text="Vous avez coulé le " + str(ship_tag)[2:] + " de votre adversaire !")
-        else:
-            display_case(Grilles, "IA", x + 1, y + 1, 1, nametag="fail")
-    except AssertionError:
-        Indic.config(text="Les coordonées du tir ne sont pas valides\n(elles doivent être de la forme : LXX)\n(avec L une lettre et XX un nombre entre 1 et 10)")
-    if car == "annihilation":
-        for l_item in lettres:
-            for n_item in range(1, 11):
-                tir_joueur(IAGrid, l_item + str(n_item), IAships)
+    if phase == "in-game":
+        try:
+            assert 2 <= len(car) <= 3
+            lettre = car[0].upper()
+            Nombre = car[1:]
+            # Conversion du car lettre en nombre
+            for i in range(10):
+                if lettre == lettres[i]:
+                    x = i
+            y = int(Nombre) - 1
+            assert 0 <= x <= 9
+            assert 0 <= y <= 9
+            Indic.config(text="Coordonées acceptées")
+            ship_tag = ""
+            if Grid[x][y] == 1:
+                boat_index = 0 
+                for b in range(len(ships)):
+                    for p in range(len(ships[b])):
+                        if (ships[b][p][0] == x+1) and (ships[b][p][1] == y+1):
+                            if ships[b][p][2] == 1:
+                                boat_index = b
+                                ship_tag = IAships_name[b]
+                                ships[b][p][2] = 0
+                                display_case(Grilles, "IA", x + 1, y + 1, 3, ship_tag)
+                            else:
+                                Indic.config(text="Vous avez déjà tiré ici et vous aviez touché !\nDommage, vous perdez un tour")
+                                return                        
+                pts_coule = 0
+                for p in range(len(ships[boat_index])):
+                    pts_coule += ships[boat_index][p][2]
+                if pts_coule == 0:
+                    Grilles.itemconfig(ship_tag, fill="red")
+                    Indic.config(text="Vous avez coulé le " + str(ship_tag)[2:] + " de votre adversaire !")
+                    finDuJeu()
+            else:
+                display_case(Grilles, "IA", x + 1, y + 1, 1, nametag="fail")
+        except AssertionError:
+            Indic.config(text="Les coordonées du tir ne sont pas valides\n(elles doivent être de la forme : LXX)\n(avec L une lettre et XX un nombre entre 1 et 10)")
+        if car == "annihilation":
+            for l_item in lettres:
+                for n_item in range(1, 11):
+                    tir_joueur(IAGrid, l_item + str(n_item), IAships)
+    else:
+        Indic.config(text='Vous êtes encore en phase de placement des bateaux.\nPour commencer la bataille veuillez cliquer sur le bouton :\n"Début du combat"')
 
 
 def moveboat(canvas, Grid, vehicle, direction):
@@ -201,6 +200,43 @@ def boat_color(event):          # Permet de mettre en vert le bateau séléction
             Grilles.itemconfig(item, fill='blue')
 
 
+def initGrids(boat_tab, grid):
+    for b in range(len(boat_tab)):
+        for p in range(len(boat_tab[b])):
+            posx = boat_tab[b][p][0]
+            posy = boat_tab[b][p][1]
+            grid[posx - 1][posy - 1] = 1
+
+
+def finDuJeu():
+    global phase
+    global endWindow
+    joueur = 0
+    IA = 0
+    for b in range(len(ships)):
+        for p in range(len(ships[b])):
+            joueur += ships[b][p][2]
+            IA += IAships[b][p][2]
+    if (IA == 0) or (joueur == 0):
+        phase = "end-game"
+        endWindow = Tk()
+        endWindow.geometry("300x75")
+        endWindow.title("Fin du jeu")
+        if IA == 0:
+            state = "gagné"
+        else:
+            state = "perdu"
+        EndLabel = Label(endWindow, text="La partie est finie, vous avez " + state + " !\nA bientôt pour une nouvelle partie !")
+        EndLabel.pack()
+        quitter = Button(endWindow, text="Quitter", command=detruire)
+        quitter.pack()
+
+
+def detruire():
+    fenetre.destroy()
+    endWindow.destroy()
+
+
 numbers = range(1, 11)
 lettres = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
@@ -218,7 +254,19 @@ Cruiser = [[1, 5, 1], [2, 5, 1], [3, 5, 1]]
 Submarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 Destroyer = [[1, 9, 1], [2, 9, 1]]
 ships = [Carrier, Battleship, Cruiser, Submarine, Destroyer]
-playerGrid = [[0]*10]*10
+
+A1 = [0] * 10
+B1 = [0] * 10
+C1 = [0] * 10
+D1 = [0] * 10
+E1 = [0] * 10
+F1 = [0] * 10
+G1 = [0] * 10
+H1 = [0] * 10
+I1 = [0] * 10
+J1 = [0] * 10
+
+playerGrid = [A1, B1, C1, D1, E1, F1, G1, H1, I1, J1]
 
         #Fin de def des données du joueur
         #Début de def des données de l'IA
@@ -229,30 +277,32 @@ IACruiser = [[1, 5, 1], [2, 5, 1], [3, 5, 1]]
 IASubmarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 IADestroyer = [[1, 9, 1], [2, 9, 1]]
 IAships = [IACarrier, IABattleship, IACruiser, IASubmarine, IADestroyer]
-IAGrid = [[0]*10]*10
+
+A2 = [0] * 10
+B2 = [0] * 10
+C2 = [0] * 10
+D2 = [0] * 10
+E2 = [0] * 10
+F2 = [0] * 10
+G2 = [0] * 10
+H2 = [0] * 10
+I2 = [0] * 10
+J2 = [0] * 10
+
+IAGrid = [A2, B2, C2, D2, E2, F2, G2, H2, I2, J2]
+
 
         #Fin de def des données de l'IA
 
-pprint(playerGrid)
-pprint(IAGrid)
-                                                                            # A CORRIGER LA PROCHAINE FOIS
-for b in range(len(ships)):
-    for p in range(len(ships[b])):
-        posx = ships[b][p][0]
-        posy = ships[b][p][1]
-        playerGrid[posx - 1][posy - 1] = 1
-
-for b in range(len(IAships)):
-    for p in range(len(IAships[b])):
-        posx = IAships[b][p][0]
-        posy = IAships[b][p][1]
-        IAGrid[posx - 1][posy - 1] = 1
+initGrids(ships, playerGrid)
+initGrids(IAships, IAGrid)
 
 pprint(playerGrid)
 pprint(IAGrid)
 
     #DEBUT DE CREATION INTERFACE
 
+endWindow = 0
 fenetre = Tk()
 fenetre.geometry("1200x850")
 fenetre.title("Bataille Navale")
@@ -299,14 +349,14 @@ Indic.place(x=50, y=300)
 B_tir = Button(fenetre, text="TIRER", command=lambda: tir_joueur(IAGrid, FireCoord.get(), IAships))
 B_tir.place(x=1000, y=400)
 
-B_verif = Button(fenetre, text="Passer au fight", command=lambda: validation(playerGrid, ships))
+B_verif = Button(fenetre, text="Début du combat", command=lambda: validation(playerGrid, ships))
 B_verif.place(x=100, y=700)
 
 FireCoord = Entry(fenetre)
 FireCoord.place(x=950, y=350)
 
         #FIN DE CREATION INTERFACE
-    
+
 for item in ships_name:
     Boatlist.insert(END, item)
 
