@@ -19,10 +19,10 @@ def tir_joueur(Grid, car, ships):
             Indic.config(text="Coordonées acceptées")
             ship_tag = ""
             if Grid[x][y] == 1:
-                boat_index = 0 
+                boat_index = 0
                 for b in range(len(ships)):
                     for p in range(len(ships[b])):
-                        if (ships[b][p][0] == x+1) and (ships[b][p][1] == y+1):
+                        if (ships[b][p][0] == x + 1) and (ships[b][p][1] == y + 1):
                             if ships[b][p][2] == 1:
                                 boat_index = b
                                 ship_tag = IAships_name[b]
@@ -30,7 +30,7 @@ def tir_joueur(Grid, car, ships):
                                 display_case(Grilles, "IA", x + 1, y + 1, 3, ship_tag)
                             else:
                                 Indic.config(text="Vous avez déjà tiré ici et vous aviez touché !\nDommage, vous perdez un tour")
-                                return                        
+                                return
                 pts_coule = 0
                 for p in range(len(ships[boat_index])):
                     pts_coule += ships[boat_index][p][2]
@@ -243,10 +243,13 @@ lettres = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 phase = "init"  # les autres phases possibles sont : "in-game" / "end-game"
 ships_name = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
 IAships_name = ["IACarrier", "IABattleship", "IACruiser", "IASubmarine", "IADestroyer"]
-        #Début de def des données du joueur
 
-            #Bateaux construits sous la forme Bateau = [Point 1, Point 2, ..., Point n],
-            #Avec Point = [x, y, verif] | Si un bateau est touché alors "verif" = 0
+"""
+Début de def des données du joueur
+
+Bateaux construits sous la forme Bateau = [Point 1, Point 2, ..., Point n],
+Avec Point = [x, y, verif] | Si un bateau est touché alors "verif" = 0
+"""
 
 Carrier = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [4, 1, 1], [5, 1, 1]]
 Battleship = [[1, 3, 1], [2, 3, 1], [3, 3, 1], [4, 3, 1]]
@@ -268,8 +271,10 @@ J1 = [0] * 10
 
 playerGrid = [A1, B1, C1, D1, E1, F1, G1, H1, I1, J1]
 
-        #Fin de def des données du joueur
-        #Début de def des données de l'IA
+"""
+Fin de def des données du joueur
+Début de def des données de l'IA
+"""
 
 IACarrier = [[1, 1, 1], [2, 1, 1], [3, 1, 1], [4, 1, 1], [5, 1, 1]]
 IABattleship = [[1, 3, 1], [2, 3, 1], [3, 3, 1], [4, 3, 1]]
@@ -292,7 +297,7 @@ J2 = [0] * 10
 IAGrid = [A2, B2, C2, D2, E2, F2, G2, H2, I2, J2]
 
 
-        #Fin de def des données de l'IA
+#Fin de def des données de l'IA
 
 initGrids(ships, playerGrid)
 initGrids(IAships, IAGrid)
@@ -300,7 +305,7 @@ initGrids(IAships, IAGrid)
 pprint(playerGrid)
 pprint(IAGrid)
 
-    #DEBUT DE CREATION INTERFACE
+#DEBUT DE CREATION INTERFACE
 
 endWindow = 0
 fenetre = Tk()
@@ -355,7 +360,7 @@ B_verif.place(x=100, y=700)
 FireCoord = Entry(fenetre)
 FireCoord.place(x=950, y=350)
 
-        #FIN DE CREATION INTERFACE
+#FIN DE CREATION INTERFACE
 
 for item in ships_name:
     Boatlist.insert(END, item)
