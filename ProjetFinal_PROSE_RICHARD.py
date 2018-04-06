@@ -1,7 +1,7 @@
 # coding: utf-8
 from Tkinter import *
 from pprint import *
-
+from random import randint
 
 def tir_joueur(Grid, car, ships):
     if phase == "in-game":
@@ -30,6 +30,8 @@ def tir_joueur(Grid, car, ships):
                                 display_case(Grilles, "IA", x + 1, y + 1, 3, ship_tag)
                             else:
                                 Indic.config(text="Vous avez déjà tiré ici et vous aviez touché !\nDommage, vous perdez un tour")
+                                # Tour de l'IA
+                                tirIA(IA_level.get(), ships)
                                 return
                 pts_coule = 0
                 for p in range(len(ships[boat_index])):
@@ -40,6 +42,9 @@ def tir_joueur(Grid, car, ships):
                     finDuJeu()
             else:
                 display_case(Grilles, "IA", x + 1, y + 1, 1, nametag="fail")
+                print "après le fail"
+                # Tour de l'IA
+                tirIA(IA_level.get(), ships)
         except AssertionError:
             Indic.config(text="Les coordonées du tir ne sont pas valides\n(elles doivent être de la forme : LXX)\n(avec L une lettre et XX un nombre entre 1 et 10)")
         if car == "annihilation":
@@ -139,7 +144,12 @@ def validation(Grid, ships):
                 count += 1
     if count == 0:
         phase = "in-game"
-        Indic.config(text="Bateaux verouillés\nLa partie commence !")
+        diff = ["facile", "intermédiaire", "difficile"]
+        for i in range(len(diff)):
+            lvl = IA_level.get() - 1
+            if i == lvl:
+                difficulte = diff[i]
+        Indic.config(text="Bateaux verouillés\nLa partie commence !" +"\n vous avez choisis l'IA " + difficulte)
     else:
         Indic.config(text="Il y a " + str(count) + " superpositions")
 
@@ -237,6 +247,38 @@ def detruire():
     endWindow.destroy()
 
 
+def tirIA(lvl, ships):
+    print "lvl == ", lvl
+    if lvl == 1:
+        x = randint(1, 10)
+        y = randint(1, 10)
+        if playerGrid[x-1][y-1] == 1:
+            # touché
+            for b in range(len(ships)):
+                for p in range(len(ships[b])):
+                    if (ships[b][p][0] == x) and (ships[b][p][1] == y):
+                        ships[b][p][2] = 0
+                        boat = b
+            display_case(Grilles, "Player", x, y, 3, nametag=ships_name[boat])
+        else:
+            # Raté
+            display_case(Grilles, "Player", x, y, 1, nametag="fail")
+
+
+"""        
+    elif lvl == 2:
+        oui
+    elif lvl == 3:
+        oui
+
+
+
+def lectureExterne(path):
+    oui
+
+def ecritureExterne(path):
+    oui
+"""
 numbers = range(1, 11)
 lettres = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
@@ -302,9 +344,6 @@ IAGrid = [A2, B2, C2, D2, E2, F2, G2, H2, I2, J2]
 initGrids(ships, playerGrid)
 initGrids(IAships, IAGrid)
 
-pprint(playerGrid)
-pprint(IAGrid)
-
 #DEBUT DE CREATION INTERFACE
 
 endWindow = 0
@@ -359,6 +398,15 @@ B_verif.place(x=100, y=700)
 
 FireCoord = Entry(fenetre)
 FireCoord.place(x=950, y=350)
+
+IA_selector = LabelFrame(fenetre, text="Choisissez votre niveau d'IA", padx=5, pady=5)
+IA_selector.place(x=1000, y=600)
+
+IA_level = IntVar()
+infos_radioB = [["Facile", 1],["Intermédiaire", 2],["Difficile", 3]]
+for text, level in infos_radioB:
+    radioB = Radiobutton(IA_selector, text=text, variable=IA_level, value=level)
+    radioB.pack(anchor=N)
 
 #FIN DE CREATION INTERFACE
 
