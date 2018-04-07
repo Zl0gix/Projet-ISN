@@ -3,6 +3,7 @@ from Tkinter import *
 from pprint import *
 from random import randint
 
+
 def tir_joueur(Grid, car, ships):
     if phase == "in-game":
         try:
@@ -149,7 +150,7 @@ def validation(Grid, ships):
             lvl = IA_level.get() - 1
             if i == lvl:
                 difficulte = diff[i]
-        Indic.config(text="Bateaux verouillés\nLa partie commence !" +"\n vous avez choisis l'IA " + difficulte)
+        Indic.config(text="Bateaux verouillés\nLa partie commence !" + "\n vous avez choisis l'IA " + difficulte)
     else:
         Indic.config(text="Il y a " + str(count) + " superpositions")
 
@@ -252,7 +253,7 @@ def tirIA(lvl, ships):
     if lvl == 1:
         x = randint(1, 10)
         y = randint(1, 10)
-        if playerGrid[x-1][y-1] == 1:
+        if playerGrid[x - 1][y - 1] == 1:
             # touché
             for b in range(len(ships)):
                 for p in range(len(ships[b])):
@@ -265,7 +266,7 @@ def tirIA(lvl, ships):
             display_case(Grilles, "Player", x, y, 1, nametag="fail")
 
 
-"""        
+"""
     elif lvl == 2:
         oui
     elif lvl == 3:
@@ -339,12 +340,12 @@ J2 = [0] * 10
 IAGrid = [A2, B2, C2, D2, E2, F2, G2, H2, I2, J2]
 
 
-#Fin de def des données de l'IA
+# Fin de def des données de l'IA
 
 initGrids(ships, playerGrid)
 initGrids(IAships, IAGrid)
 
-#DEBUT DE CREATION INTERFACE
+# DEBUT DE CREATION INTERFACE
 
 endWindow = 0
 fenetre = Tk()
@@ -403,12 +404,12 @@ IA_selector = LabelFrame(fenetre, text="Choisissez votre niveau d'IA", padx=5, p
 IA_selector.place(x=1000, y=600)
 
 IA_level = IntVar()
-infos_radioB = [["Facile", 1],["Intermédiaire", 2],["Difficile", 3]]
+infos_radioB = [["Facile", 1], ["Intermédiaire", 2], ["Difficile", 3]]
 for text, level in infos_radioB:
     radioB = Radiobutton(IA_selector, text=text, variable=IA_level, value=level)
     radioB.pack(anchor=N)
 
-#FIN DE CREATION INTERFACE
+# FIN DE CREATION INTERFACE
 
 for item in ships_name:
     Boatlist.insert(END, item)
