@@ -43,7 +43,6 @@ def tir_joueur(Grid, car, ships):
                     finDuJeu()
             else:
                 display_case(Grilles, "IA", x + 1, y + 1, 1, nametag="fail")
-                print "après le fail"
                 # Tour de l'IA
                 tirIA(IA_level.get(), ships)
         except AssertionError:
@@ -137,8 +136,13 @@ def moveboat(canvas, Grid, vehicle, direction):
 
 
 def validation(Grid, ships):
+    if phase != "init":
+        return
     global phase
     count = 0
+    if IA_level.get() == 0:
+        Indic.config(text="Vous devez choisir une difficulté d'IA\nAvant de jouer")
+        return
     for x in range(len(Grid)):
         for y in range(len(Grid[x])):
             if Grid[x][y] > 1:
@@ -151,6 +155,8 @@ def validation(Grid, ships):
             if i == lvl:
                 difficulte = diff[i]
         Indic.config(text="Bateaux verouillés\nLa partie commence !" + "\n vous avez choisis l'IA " + difficulte)
+        Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
+        Boatlist.selection_clear(0, END)
     else:
         Indic.config(text="Il y a " + str(count) + " superpositions")
 
@@ -203,6 +209,8 @@ def display_case(canvas, board, x, y, state, nametag=""):
 
 
 def boat_color(event):          # Permet de mettre en vert le bateau séléctioné
+    if phase != "init":
+        return
     ship = Boatlist.get(ACTIVE)
     for item in ships_name:
         if item == ship:
@@ -249,10 +257,13 @@ def detruire():
 
 
 def tirIA(lvl, ships):
-    print "lvl == ", lvl
     if lvl == 1:
         x = randint(1, 10)
         y = randint(1, 10)
+        
+                    
+
+                    
         if playerGrid[x - 1][y - 1] == 1:
             # touché
             for b in range(len(ships)):
@@ -301,18 +312,10 @@ Submarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 Destroyer = [[1, 9, 1], [2, 9, 1]]
 ships = [Carrier, Battleship, Cruiser, Submarine, Destroyer]
 
-A1 = [0] * 10
-B1 = [0] * 10
-C1 = [0] * 10
-D1 = [0] * 10
-E1 = [0] * 10
-F1 = [0] * 10
-G1 = [0] * 10
-H1 = [0] * 10
-I1 = [0] * 10
-J1 = [0] * 10
-
-playerGrid = [A1, B1, C1, D1, E1, F1, G1, H1, I1, J1]
+playerGrid=[0]*10
+temp=playerGrid[:]
+for i in range(len(playerGrid)):
+    playerGrid[i]=temp[:]
 
 """
 Fin de def des données du joueur
@@ -326,19 +329,15 @@ IASubmarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 IADestroyer = [[1, 9, 1], [2, 9, 1]]
 IAships = [IACarrier, IABattleship, IACruiser, IASubmarine, IADestroyer]
 
-A2 = [0] * 10
-B2 = [0] * 10
-C2 = [0] * 10
-D2 = [0] * 10
-E2 = [0] * 10
-F2 = [0] * 10
-G2 = [0] * 10
-H2 = [0] * 10
-I2 = [0] * 10
-J2 = [0] * 10
+IAGrid=[0]*10
+temp=IAGrid[:]
+for i in range(len(IAGrid)):
+    IAGrid[i]=temp[:]
 
-IAGrid = [A2, B2, C2, D2, E2, F2, G2, H2, I2, J2]
-
+TirIA=[0]*10
+temp=TirIA[:]
+for i in range(len(TirIA)):
+    TirIA[i]=temp[:]
 
 # Fin de def des données de l'IA
 
@@ -423,8 +422,6 @@ fenetre.mainloop()
 
 """
 Il reste :
-    - le systeme de tours
-    - le systeme de win
     - le systeme de calcul de l'IA:
         - Les conclusions rapides (taille de l'écart des tirs)
         - les conclusions a écrire dans des fichiers (moyennes et éclatement)
