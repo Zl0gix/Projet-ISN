@@ -7,4 +7,4 @@ Voici le résultat du travail de _Valentin Prose_ et _Raphaël Richard_, élève
 Le programme, développé en Python, est une bataille navale dans laquelle vous jouez contre une Intelligence Artificielle (encore en cours de développement...)
 
 
-Nous espérons que le jeu vous plaira! (Il sera peut être publié plus largement que sur cette page GitHub une fois fini, qui sait ¯\\\_(ツ)_/¯)
+Nous espérons que le jeu vous plaira! (Il sera peut être publié plus largement que sur cette page GitHub une fois fini, qui sait ¯\\\_(ツ)_/¯ )
