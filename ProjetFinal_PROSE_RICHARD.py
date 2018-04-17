@@ -4,7 +4,7 @@ from pprint import *
 from random import randint
 
 
-def tir_joueur(Grid, car, ships):
+def tir_joueur(Grid, car, IA_boats):
     if phase == "in-game":
         try:
             assert 2 <= len(car) <= 3
@@ -21,22 +21,23 @@ def tir_joueur(Grid, car, ships):
             ship_tag = ""
             if Grid[x][y] == 1:
                 boat_index = 0
-                for b in range(len(ships)):
-                    for p in range(len(ships[b])):
-                        if (ships[b][p][0] == x + 1) and (ships[b][p][1] == y + 1):
-                            if ships[b][p][2] == 1:
+                for b in range(len(IA_boats)):
+                    for p in range(len(IA_boats[b])):
+                        if (IA_boats[b][p][0] == x + 1) and (IA_boats[b][p][1] == y + 1):
+                            if IA_boats[b][p][2] == 1:
                                 boat_index = b
                                 ship_tag = IAships_name[b]
-                                ships[b][p][2] = 0
+                                IA_boats[b][p][2] = 0
                                 display_case(Grilles, "IA", x + 1, y + 1, 3, ship_tag)
+                                IA_f_ships.set(pformat(IA_boats))
                             else:
                                 Indic.config(text="Vous avez déjà tiré ici et vous aviez touché !\nDommage, vous perdez un tour")
                                 # Tour de l'IA
                                 tirIA(IA_level.get(), ships)
                                 return
                 pts_coule = 0
-                for p in range(len(ships[boat_index])):
-                    pts_coule += ships[boat_index][p][2]
+                for p in range(len(IA_boats[boat_index])):
+                    pts_coule += IA_boats[boat_index][p][2]
                 if pts_coule == 0:
                     Grilles.itemconfig(ship_tag, fill="red")
                     Indic.config(text="Vous avez coulé le " + str(ship_tag)[2:] + " de votre adversaire !")
@@ -49,6 +50,10 @@ def tir_joueur(Grid, car, ships):
             Indic.config(text="Les coordonées du tir ne sont pas valides\n(elles doivent être de la forme : LXX)\n(avec L une lettre et XX un nombre entre 1 et 10)")
         if car == "annihilation":
             for l_item in lettres:
+                for n_item in range(1, 11):
+                    tir_joueur(IAGrid, l_item + str(n_item), IAships)
+        if car == "r-annihilation":
+            for l_item in reversed_Lettres:
                 for n_item in range(1, 11):
                     tir_joueur(IAGrid, l_item + str(n_item), IAships)
     else:
@@ -133,6 +138,7 @@ def moveboat(canvas, Grid, vehicle, direction):
                 for p in range(len(boat)):
                     display_case(canvas, "Player", boat[p][0], boat[p][1], 2, ships_name[vehicle[0]])
                 boat_color("rien")
+            P_f_ships.set(pformat(ships))
 
 
 def validation(Grid, ships):
@@ -158,7 +164,7 @@ def validation(Grid, ships):
         Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
         Boatlist.selection_clear(0, END)
     else:
-        Indic.config(text="Il y a " + str(count) + " superpositions")
+        Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
 
 def saut_ligne(canvas, y, nb):
@@ -254,27 +260,44 @@ def finDuJeu():
 def detruire():
     fenetre.destroy()
     endWindow.destroy()
+    debugWindow.destroy()
 
 
 def tirIA(lvl, ships):
+    global TirIA
     if lvl == 1:
         x = randint(1, 10)
         y = randint(1, 10)
-        
-                    
-
-                    
+        while TirIA[x - 1][y - 1] == 1:
+            x = randint(1, 10)
+            y = randint(1, 10)
         if playerGrid[x - 1][y - 1] == 1:
             # touché
+            print "je vais toucher !"
             for b in range(len(ships)):
                 for p in range(len(ships[b])):
                     if (ships[b][p][0] == x) and (ships[b][p][1] == y):
                         ships[b][p][2] = 0
+                        P_f_ships.set(pformat(ships))
                         boat = b
             display_case(Grilles, "Player", x, y, 3, nametag=ships_name[boat])
+            valid = 0
+            for p in range(len(ships[b])):
+                valid += ships[b][p][2]
+            if valid == 0:
+                Grilles.itemconfig(ships_name[boat], fill='red')
+                full_valid = 0
+                for b in range(len(ships)):
+                    for p in range(len(ships[b])):
+                        full_valid += ships[b][p][2]
+                if full_valid == 0:
+                    finDuJeu()
+            TirIA[x - 1][y - 1] += 1
+            IA_f_shots.set(pformat(TirIA))
         else:
             # Raté
             display_case(Grilles, "Player", x, y, 1, nametag="fail")
+            TirIA[x - 1][y - 1] += 1
 
 
 """
@@ -293,6 +316,8 @@ def ecritureExterne(path):
 """
 numbers = range(1, 11)
 lettres = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+reversed_Lettres = ["J", "I", "H", "G", "F", "E", "D", "C", "B", "A"]
+
 
 phase = "init"  # les autres phases possibles sont : "in-game" / "end-game"
 ships_name = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
@@ -312,10 +337,10 @@ Submarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 Destroyer = [[1, 9, 1], [2, 9, 1]]
 ships = [Carrier, Battleship, Cruiser, Submarine, Destroyer]
 
-playerGrid=[0]*10
-temp=playerGrid[:]
+playerGrid = [0] * 10
+temp = playerGrid[:]
 for i in range(len(playerGrid)):
-    playerGrid[i]=temp[:]
+    playerGrid[i] = temp[:]
 
 """
 Fin de def des données du joueur
@@ -329,15 +354,15 @@ IASubmarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 IADestroyer = [[1, 9, 1], [2, 9, 1]]
 IAships = [IACarrier, IABattleship, IACruiser, IASubmarine, IADestroyer]
 
-IAGrid=[0]*10
-temp=IAGrid[:]
+IAGrid = [0] * 10
+temp = IAGrid[:]
 for i in range(len(IAGrid)):
-    IAGrid[i]=temp[:]
+    IAGrid[i] = temp[:]
 
-TirIA=[0]*10
-temp=TirIA[:]
+TirIA = [0] * 10
+temp = TirIA[:]
 for i in range(len(TirIA)):
-    TirIA[i]=temp[:]
+    TirIA[i] = temp[:]
 
 # Fin de def des données de l'IA
 
@@ -347,6 +372,34 @@ initGrids(IAships, IAGrid)
 # DEBUT DE CREATION INTERFACE
 
 endWindow = 0
+
+debugWindow = Tk()
+debugWindow.title("Debug window")
+P_Frame = LabelFrame(debugWindow, text="Infos du Joueur", padx=5, pady=5)
+P_Frame.grid(column=1, row=1)
+
+P_f_Grid = StringVar(master=P_Frame, value=pformat(playerGrid))
+P_f_ships = StringVar(master=P_Frame, value=pformat(ships))
+
+P_Grid = Label(P_Frame, textvariable=P_f_Grid)
+P_Grid.grid(column=1, row=1)
+P_ships = Label(P_Frame, textvariable=P_f_ships, justify="left")
+P_ships.grid(column=2, row=1)
+IA_Frame = LabelFrame(debugWindow, text="Infos de l'IA", padx=5, pady=5)
+IA_Frame.grid(column=1, row=2)
+
+IA_f_Grid = StringVar(master=IA_Frame, value=pformat(IAGrid))
+IA_f_ships = StringVar(master=IA_Frame, value=pformat(IAships))
+IA_f_shots = StringVar(master=IA_Frame, value=pformat(TirIA))
+
+IA_Grid = Label(IA_Frame, textvariable=IA_f_Grid)
+IA_Grid.grid(column=1, row=1)
+IA_ships = Label(IA_Frame, textvariable=IA_f_ships, justify="left")
+IA_ships.grid(column=2, row=1)
+IA_shots = Label(IA_Frame, textvariable=IA_f_shots)
+IA_shots.grid(column=1, columnspan=2, row=2)
+debugWindow.withdraw()
+
 fenetre = Tk()
 fenetre.geometry("1200x850")
 fenetre.title("Bataille Navale")
@@ -402,7 +455,7 @@ FireCoord.place(x=950, y=350)
 IA_selector = LabelFrame(fenetre, text="Choisissez votre niveau d'IA", padx=5, pady=5)
 IA_selector.place(x=1000, y=600)
 
-IA_level = IntVar()
+IA_level = IntVar(master=fenetre)
 infos_radioB = [["Facile", 1], ["Intermédiaire", 2], ["Difficile", 3]]
 for text, level in infos_radioB:
     radioB = Radiobutton(IA_selector, text=text, variable=IA_level, value=level)
@@ -418,6 +471,8 @@ for b in range(len(ships)):
         display_case(Grilles, "Player", ships[b][p][0], ships[b][p][1], 2, ships_name[b])
 
 fenetre.bind('<Return>', lambda event: tir_joueur(IAGrid, FireCoord.get(), IAships))
+fenetre.bind('<Control_L>', lambda event: debugWindow.deiconify())
+
 fenetre.mainloop()
 
 """
