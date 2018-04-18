@@ -263,6 +263,15 @@ def detruire():
     debugWindow.destroy()
 
 
+def convert_proba_to_coord(grid, min_proba):
+    liste = []
+    for x in range(len(grid)):
+        for y in range(len(grid[x])):
+            if grid[x][y] == min_proba:
+                liste.append([x, y])
+    return liste
+
+
 def tirIA(lvl, ships):
     global TirIA
     if lvl == 1:
