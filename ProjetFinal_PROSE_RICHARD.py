@@ -272,6 +272,30 @@ def convert_proba_to_coord(grid, min_proba):
     return liste
 
 
+def add_grids(grid, to_Add_Grid):
+    for x in range(len(grid)):
+        for y in range(len(grid[x])):
+            grid[x][y] = (grid[x][y] + to_Add_Grid[x][y]) / 2
+
+
+def grid_to_txt(grid):
+    to_insert = ""
+    for x in range(len(grid)):
+        for y in range(len(grid[x])):
+            if y != (len(grid[x]) - 1):
+                to_insert += str(grid[x][y]) + " "
+            else:
+                if x == (len(grid) - 1):
+                    to_insert += str(grid[x][y])
+                else:
+                    to_insert += str(grid[x][y]) + "\n"
+    return to_insert
+
+
+def set_IA_Boats():
+    # insérer le sélectionneur de positions
+
+
 def tirIA(lvl, ships):
     global TirIA
     if lvl == 1:
@@ -282,7 +306,6 @@ def tirIA(lvl, ships):
             y = randint(1, 10)
         if playerGrid[x - 1][y - 1] == 1:
             # touché
-            print "je vais toucher !"
             for b in range(len(ships)):
                 for p in range(len(ships[b])):
                     if (ships[b][p][0] == x) and (ships[b][p][1] == y):
@@ -485,7 +508,15 @@ fenetre.bind('<Control_L>', lambda event: debugWindow.deiconify())
 fenetre.mainloop()
 
 """
+ATTENTION :
+    Seules les fonctions "grid to text" et "add grid" a été implémentées.
+    Pour qu'elles soit fonctionnelles il faut rajouter la lecture depuis les fichier externes et assigner à chaque lecture une variable globale.
+
 Il reste :
+    - IA lvl 1 : positions préenregistrées
+    - IA lvl 2 : bateaux placés aléatoirement selon algo un peu bullshit sur les bords
+    - IA lvl 3 : Valentin trouve une solution miracle sinon aléatoire selon algo bullshit sur les bords
+
     - le systeme de calcul de l'IA:
         - Les conclusions rapides (taille de l'écart des tirs)
         - les conclusions a écrire dans des fichiers (moyennes et éclatement)
