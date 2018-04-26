@@ -2,9 +2,74 @@
 from Tkinter import *
 from pprint import *
 from random import randint
+import os.path
+
+
+def initGrid(liste):
+    liste = [0] * 10
+    temp = liste[:]
+    for i in range(len(liste)):
+        liste[i] = temp[:]
+
+
+def nb_lignes(name):
+    file = open(name, "r")
+    temp = file.readline()
+    count = 0
+    while temp != "":
+        count += 1
+        temp = file.readline()
+    file.close()
+    return count
+
+
+def txt_to_grid(name):
+    if (os.path.exists(name)) and (os.path.getsize(name) > 0):
+        n_lignes = nb_lignes(name)
+        liste = [[0]]
+        for i in range(n_lignes - 1):
+            liste.append([0])
+        file = open(name, "r")
+        for i in range(n_lignes):
+            temp = file.readline()
+            stock = ""
+            for car in temp:
+                if car == " ":
+                    if stock == "0":
+                        liste[i].append(0)
+                    else:
+                        liste[i].append(float(stock))
+                    stock = ""
+                elif (car != "") and (car != "\n"):
+                    stock += car
+        file.close()
+        return liste
+    else:
+        file = open(name, "w")
+        file.write(grid_to_txt(zeroGrid))
+        file.close()
+        return zeroGrid
+
+
+def determineTir():
+    if IA_level.get() == 1:
+        tirIA(ships, "Random")
+    elif IA_level.get() == 2:
+        if to_follow[0] == 1:
+            tirIA(ships, "Following")
+        else:
+            tirIA(ships, "Random")
+    elif IA_level.get() == 3:
+        if len(possibleBoat) != 0:
+            tirIA(ships, "Intelligent")
+        if to_follow[0] == 1:
+            tirIA(ships, "Following")
+        else:
+            tirIA(ships, "Random")
 
 
 def tir_joueur(Grid, car, IA_boats):
+    global TirPlayer
     if phase == "in-game":
         try:
             assert 2 <= len(car) <= 3
@@ -19,6 +84,7 @@ def tir_joueur(Grid, car, IA_boats):
             assert 0 <= y <= 9
             Indic.config(text="Coordonées acceptées")
             ship_tag = ""
+            TirPlayer[x][y] = 1
             if Grid[x][y] == 1:
                 boat_index = 0
                 for b in range(len(IA_boats)):
@@ -33,7 +99,7 @@ def tir_joueur(Grid, car, IA_boats):
                             else:
                                 Indic.config(text="Vous avez déjà tiré ici et vous aviez touché !\nDommage, vous perdez un tour")
                                 # Tour de l'IA
-                                tirIA(IA_level.get(), ships)
+                                determineTir()
                                 return
                 pts_coule = 0
                 for p in range(len(IA_boats[boat_index])):
@@ -45,7 +111,7 @@ def tir_joueur(Grid, car, IA_boats):
             else:
                 display_case(Grilles, "IA", x + 1, y + 1, 1, nametag="fail")
                 # Tour de l'IA
-                tirIA(IA_level.get(), ships)
+                determineTir()
         except AssertionError:
             Indic.config(text="Les coordonées du tir ne sont pas valides\n(elles doivent être de la forme : LXX)\n(avec L une lettre et XX un nombre entre 1 et 10)")
         if car == "annihilation":
@@ -67,8 +133,6 @@ def moveboat(canvas, Grid, vehicle, direction):
                 if vehicle[0] == i:
                     boat = ships[i]
             decal = []
-            fleches = ['Left', 'Right', 'Down', 'Up', "Rotate"]
-            offset = [[-1, 0], [1, 0], [0, 1], [0, -1], "rotation"]
             for i in range(5):
                 if direction == fleches[i]:
                     decal = offset[i]
@@ -142,6 +206,7 @@ def moveboat(canvas, Grid, vehicle, direction):
 
 
 def validation(Grid, ships):
+    global possibleBoat
     if phase != "init":
         return
     global phase
@@ -157,12 +222,13 @@ def validation(Grid, ships):
         phase = "in-game"
         diff = ["facile", "intermédiaire", "difficile"]
         for i in range(len(diff)):
-            lvl = IA_level.get() - 1
-            if i == lvl:
+            if i == (IA_level.get() - 1):
                 difficulte = diff[i]
         Indic.config(text="Bateaux verouillés\nLa partie commence !" + "\n vous avez choisis l'IA " + difficulte)
         Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
         Boatlist.selection_clear(0, END)
+        if IA_level.get() == 3:
+            possibleBoat = convert_proba_to_coord(old_Average_Pboat, 0.5)
     else:
         Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
@@ -225,7 +291,7 @@ def boat_color(event):          # Permet de mettre en vert le bateau séléction
             Grilles.itemconfig(item, fill='blue')
 
 
-def initGrids(boat_tab, grid):
+def init_ships_Grids(boat_tab, grid):
     for b in range(len(boat_tab)):
         for p in range(len(boat_tab[b])):
             posx = boat_tab[b][p][0]
@@ -255,6 +321,10 @@ def finDuJeu():
         EndLabel.pack()
         quitter = Button(endWindow, text="Quitter", command=detruire)
         quitter.pack()
+        new_Average_Pshots = add_grids(TirPlayer, old_Average_Pshots)
+        new_Average_Pboat = add_grids(playerGrid, old_Average_Pboat)
+        overwrite_file("AveragePshots", new_Average_Pshots)
+        overwrite_file("AveragePboat", new_Average_Pboat)
 
 
 def detruire():
@@ -263,7 +333,7 @@ def detruire():
     debugWindow.destroy()
 
 
-def convert_proba_to_coord(grid, min_proba):
+def initializeQueue(grid, min_proba):
     liste = []
     for x in range(len(grid)):
         for y in range(len(grid[x])):
@@ -276,6 +346,12 @@ def add_grids(grid, to_Add_Grid):
     for x in range(len(grid)):
         for y in range(len(grid[x])):
             grid[x][y] = (grid[x][y] + to_Add_Grid[x][y]) / 2
+
+
+def overwrite_file(name, grid):
+    file = open(name, "w")
+    file.write(grid_to_txt(grid))
+    file.close()
 
 
 def grid_to_txt(grid):
@@ -294,66 +370,191 @@ def grid_to_txt(grid):
 
 def set_IA_Boats():
     # insérer le sélectionneur de positions
+    oui
 
 
-def tirIA(lvl, ships):
+def coreTir(ships, x, y):
     global TirIA
-    if lvl == 1:
+    if playerGrid[x - 1][y - 1] == 1:
+        # touché
+        for b in range(len(ships)):
+            for p in range(len(ships[b])):
+                if (ships[b][p][0] == x) and (ships[b][p][1] == y):
+                    ships[b][p][2] = 0
+                    P_f_ships.set(pformat(ships))
+                    boat = b
+        display_case(Grilles, "Player", x, y, 3, nametag=ships_name[boat])
+        valid = 0
+        for p in range(len(ships[b])):
+            valid += ships[b][p][2]
+        if valid == 0:
+            Grilles.itemconfig(ships_name[boat], fill='red')
+            full_valid = 0
+            for b in range(len(ships)):
+                for p in range(len(ships[b])):
+                    full_valid += ships[b][p][2]
+            if full_valid == 0:
+                finDuJeu()
+        TirIA[x - 1][y - 1] += 1
+        IA_f_shots.set(pformat(TirIA))
+        return "touched", valid
+    else:
+        # Raté
+        display_case(Grilles, "Player", x, y, 1, nametag="fail")
+        TirIA[x - 1][y - 1] += 1
+        return "fail"
+
+
+def detect_T_or_F(oldx, oldy):
+    global to_follow
+    if oldy == 1:
+        to_follow[6] = False
+    if oldy == 10:
+        to_follow[5] = False
+    if oldx == 1:
+        to_follow[3] = False
+    if oldx == 10:
+        to_follow[4] = False
+
+
+def tirIA(ships, mode, oldx=0, oldy=0):
+    global possibleBoat
+    global to_follow
+    if mode == "Random":
         x = randint(1, 10)
         y = randint(1, 10)
         while TirIA[x - 1][y - 1] == 1:
             x = randint(1, 10)
             y = randint(1, 10)
-        if playerGrid[x - 1][y - 1] == 1:
-            # touché
-            for b in range(len(ships)):
-                for p in range(len(ships[b])):
-                    if (ships[b][p][0] == x) and (ships[b][p][1] == y):
-                        ships[b][p][2] = 0
-                        P_f_ships.set(pformat(ships))
-                        boat = b
-            display_case(Grilles, "Player", x, y, 3, nametag=ships_name[boat])
-            valid = 0
-            for p in range(len(ships[b])):
-                valid += ships[b][p][2]
-            if valid == 0:
-                Grilles.itemconfig(ships_name[boat], fill='red')
-                full_valid = 0
-                for b in range(len(ships)):
-                    for p in range(len(ships[b])):
-                        full_valid += ships[b][p][2]
-                if full_valid == 0:
-                    finDuJeu()
-            TirIA[x - 1][y - 1] += 1
-            IA_f_shots.set(pformat(TirIA))
+        tirState, boatLiving = coreTir(ships, x, y)
+        if state == "touched":
+            if IA_level.get() == 1:
+                tirIA(ships, "Random")
+            elif boatLiving > 0:
+                tirIA(ships, 'Following', x, y)
+            elif IA_level.get() == 2:
+                tirIA(ships, 'Random')
+            elif len(possibleBoat) > 0:
+                tirIA(ships, "Intelligent")
+            else:
+                tirIA(ships, "random")
+    elif mode == "Intelligent":
+        x = possibleBoat[0][0]
+        y = possibleBoat[0][1]
+        possibleBoat.pop(0)
+        tirState, boatLiving = coreTir(ships, x, y)
+        if boatLiving > 0:
+            tirIA(ships, "Following", x, y)
+        elif len(possibleBoat) > 0:
+            tirIA(ships, "Intelligent")
+    elif mode == "Following":
+        to_follow[7] += 1
+        if to_follow[0] == 0:
+            to_follow[1] = oldx
+            to_follow[2] = oldy
+            detect_T_or_F(oldx, oldy)
+            direction = randint(3, 6)
+            while to_follow[direction] is False:
+                direction = randint(0, 3)
+            x = oldx + offset[direction + 3][0]
+            y = oldy + offset[direction + 3][1]
+            state, boatLiving = coreTir(ships, x, y)
+            if state == "fail":
+                to_follow[direction] = False
+                to_follow[0] = 1
+                count = 0
+                for i in range(4):
+                    if to_follow[3 + i] is False:
+                        count += 1
+                if count == 3:
+                    for i in range(4):
+                        if to_follow[3 + i] == 0:
+                            to_follow[3 + i] = True
+            elif boatLiving > 0:
+                for i in range(4):
+                    to_follow[3 + i] = directions[direction - 3][i]
+                detect_T_or_F(oldx, oldy)
+                tirIA(ships, "Following", oldx, oldy)
+            else:
+                for i in range(len(to_follow)):
+                    to_follow[i] = 0
+                if IA_level.get() == 2:
+                    tirIA(ships, "Random")
+                elif IA_level.get() == 3:
+                    if len(possibleBoat) > 0:
+                        tirIA(ships, "Intelligent")
+                    else:
+                        tirIA(ships, 'Random')
         else:
-            # Raté
-            display_case(Grilles, "Player", x, y, 1, nametag="fail")
-            TirIA[x - 1][y - 1] += 1
+            direction = -1
+            for i in range(4):
+                if to_follow[3 + i] is True:
+                    direction = i
+            if direction == -1:
+                for i in range(4):
+                    if to_follow[3 + i] == "Maybe":
+                        direction = i
+            if direction == -1:
+                direction = randint(3, 6)
+                while to_follow[direction] is False:
+                    direction = randint(0, 3)
+            x = oldx + (to_follow[7] * offset[direction + 3][0])
+            y = oldy + (to_follow[7] * offset[direction + 3][1])
+            state, boatLiving = coreTir(ships, x, y)
+            if state == "fail":
+                to_follow[3 + direction] = False
+                count = 0
+                for i in range(4):
+                    if to_follow[i + 3] is False:
+                        count += 1
+                if count == 3:
+                    for i in range(4):
+                        if to_follow[3 + i] == 0:
+                            to_follow[3 + i] = True
+            elif boatLiving > 0:
+                count = 0
+                for i in range(4):
+                    if (to_follow[3 + i] is True) or (to_follow[3 + i] == "Maybe"):
+                        count = 1
+                if count == 0:
+                    for i in range(4):
+                        to_follow[3 + i] = directions[direction - 3][i]
+                    detect_T_or_F(oldx, oldy)
+                tirIA(ships, "Following")
+            else:
+                for i in range(len(to_follow)):
+                    to_follow[i] = 0
+                if IA_level.get() == 2:
+                    tirIA(ships, "Random")
+                elif IA_level.get() == 3:
+                    if len(possibleBoat) > 0:
+                        tirIA(ships, "Intelligent")
+                    else:
+                        tirIA(ships, 'Random')
 
 
-"""
-    elif lvl == 2:
-        oui
-    elif lvl == 3:
-        oui
-
-
-
-def lectureExterne(path):
-    oui
-
-def ecritureExterne(path):
-    oui
-"""
 numbers = range(1, 11)
 lettres = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 reversed_Lettres = ["J", "I", "H", "G", "F", "E", "D", "C", "B", "A"]
 
+fleches = ['Left', 'Right', 'Down', 'Up', "Rotate"]
+offset = [[-1, 0], [1, 0], [0, 1], [0, -1], "rotation"]
+directions = [[True, "Maybe", False, False], ["Maybe", True, False, False], [False, False, True, "Maybe"], [False, False, "Maybe", True]]
 
 phase = "init"  # les autres phases possibles sont : "in-game" / "end-game"
 ships_name = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
 IAships_name = ["IACarrier", "IABattleship", "IACruiser", "IASubmarine", "IADestroyer"]
+
+zeroGrid = []
+initGrid(zeroGrid)
+
+possibleBoat = 0
+old_Average_Pboat = txt_to_grid("AveragePboat")
+old_Average_Pshots = txt_to_grid("AveragePshots")
+
+# [state, x, y, left, right, down, up, indent]
+to_follow = [0] * 8
+to_follow[7] = 1
 
 """
 Début de def des données du joueur
@@ -369,10 +570,11 @@ Submarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 Destroyer = [[1, 9, 1], [2, 9, 1]]
 ships = [Carrier, Battleship, Cruiser, Submarine, Destroyer]
 
-playerGrid = [0] * 10
-temp = playerGrid[:]
-for i in range(len(playerGrid)):
-    playerGrid[i] = temp[:]
+playerGrid = []
+initGrid(playerGrid)
+
+TirPlayer = []
+initGrid(TirPlayer)
 
 """
 Fin de def des données du joueur
@@ -386,20 +588,16 @@ IASubmarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 IADestroyer = [[1, 9, 1], [2, 9, 1]]
 IAships = [IACarrier, IABattleship, IACruiser, IASubmarine, IADestroyer]
 
-IAGrid = [0] * 10
-temp = IAGrid[:]
-for i in range(len(IAGrid)):
-    IAGrid[i] = temp[:]
+IA_Grid = []
+initGrid(IAGrid)
 
-TirIA = [0] * 10
-temp = TirIA[:]
-for i in range(len(TirIA)):
-    TirIA[i] = temp[:]
+TirIA = []
+initGrid(TirIA)
 
 # Fin de def des données de l'IA
 
-initGrids(ships, playerGrid)
-initGrids(IAships, IAGrid)
+init_ships_Grids(ships, playerGrid)
+init_ships_Grids(IAships, IAGrid)
 
 # DEBUT DE CREATION INTERFACE
 
@@ -430,13 +628,22 @@ IA_ships = Label(IA_Frame, textvariable=IA_f_ships, justify="left")
 IA_ships.grid(column=2, row=1)
 IA_shots = Label(IA_Frame, textvariable=IA_f_shots)
 IA_shots.grid(column=1, columnspan=2, row=2)
+
+IA_3_Queue = StringVar(master=IA_Frame, value=pformat(possibleBoat))
+IA_3_disp_Queue = Label(master=IA_Frame, textvariable=IA_3_Queue)
+IA_3_disp_Queue.grid(column=1, columnspan=2, row=3)
+
+IA_following = StringVar(master=IA_Frame, value=pformat(to_follow))
+IA_disp_following = Label(master=IA_Frame, textvariable=IA_following)
+IA_disp_following.grid(column=1, columnspan=2, row=4)
+
 debugWindow.withdraw()
 
 fenetre = Tk()
 fenetre.geometry("1200x850")
 fenetre.title("Bataille Navale")
 
-Grilles = Canvas(fenetre, width=430, height=830)                        #debut creation grille
+Grilles = Canvas(fenetre, width=430, height=830)  # debut creation grille
 Grilles.place(x=400, y=10)
 
 trace_grid(Grilles)
@@ -445,7 +652,7 @@ Grilles.create_line(1, 0, 1, 830, tags="core")
 Grilles.create_line(30, 0, 30, 830, width=2, tags="core")
 Grilles.create_line(0, 400, 430, 400, width=2, tags="core")
 Grilles.create_line(0, 430, 430, 430, width=2, tags="core")
-Grilles.create_rectangle(0, 400, 30, 430, fill='black', tags="core")    #fin creation grille
+Grilles.create_rectangle(0, 400, 30, 430, fill='black', tags="core")  # fin creation grille
 
 Boat_title = LabelFrame(fenetre, text="Choisissez le bateau à déplacer\n(Double-cliquez sur son nom)", pady=5)
 Boat_title.place(x=100, y=100)
@@ -508,20 +715,13 @@ fenetre.bind('<Control_L>', lambda event: debugWindow.deiconify())
 fenetre.mainloop()
 
 """
-ATTENTION :
-    Seules les fonctions "grid to text" et "add grid" a été implémentées.
-    Pour qu'elles soit fonctionnelles il faut rajouter la lecture depuis les fichier externes et assigner à chaque lecture une variable globale.
-
 Il reste :
     - IA lvl 1 : positions préenregistrées
-    - IA lvl 2 : bateaux placés aléatoirement selon algo un peu bullshit sur les bords
+    - IA lvl 2 : + de positions
     - IA lvl 3 : Valentin trouve une solution miracle sinon aléatoire selon algo bullshit sur les bords
 
-    - le systeme de calcul de l'IA:
-        - Les conclusions rapides (taille de l'écart des tirs)
-        - les conclusions a écrire dans des fichiers (moyennes et éclatement)
     - les bateaux de l'IA
 
 Amélioration :
-    - carré en rouge quand superpos
+    - carré en rouge quand superpos ? ou pas, ce serait un eu chiant quand meme
 """
