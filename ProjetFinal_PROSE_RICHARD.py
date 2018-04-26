@@ -4,12 +4,15 @@ from pprint import *
 from random import randint
 import os.path
 
+phase = "init"  # les autres phases possibles sont : "in-game" / "end-game"
 
-def initGrid(liste):
+
+def initGrid():
     liste = [0] * 10
     temp = liste[:]
     for i in range(len(liste)):
         liste[i] = temp[:]
+    return liste
 
 
 def nb_lignes(name):
@@ -541,12 +544,10 @@ fleches = ['Left', 'Right', 'Down', 'Up', "Rotate"]
 offset = [[-1, 0], [1, 0], [0, 1], [0, -1], "rotation"]
 directions = [[True, "Maybe", False, False], ["Maybe", True, False, False], [False, False, True, "Maybe"], [False, False, "Maybe", True]]
 
-phase = "init"  # les autres phases possibles sont : "in-game" / "end-game"
 ships_name = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
 IAships_name = ["IACarrier", "IABattleship", "IACruiser", "IASubmarine", "IADestroyer"]
 
-zeroGrid = []
-initGrid(zeroGrid)
+zeroGrid = initGrid()
 
 possibleBoat = 0
 old_Average_Pboat = txt_to_grid("AveragePboat")
@@ -570,11 +571,9 @@ Submarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 Destroyer = [[1, 9, 1], [2, 9, 1]]
 ships = [Carrier, Battleship, Cruiser, Submarine, Destroyer]
 
-playerGrid = []
-initGrid(playerGrid)
+playerGrid = initGrid()
 
-TirPlayer = []
-initGrid(TirPlayer)
+TirPlayer = initGrid()
 
 """
 Fin de def des données du joueur
@@ -588,11 +587,9 @@ IASubmarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 IADestroyer = [[1, 9, 1], [2, 9, 1]]
 IAships = [IACarrier, IABattleship, IACruiser, IASubmarine, IADestroyer]
 
-IA_Grid = []
-initGrid(IAGrid)
+IAGrid = initGrid(IAGrid)
 
-TirIA = []
-initGrid(TirIA)
+TirIA = initGrid(TirIA)
 
 # Fin de def des données de l'IA
 
