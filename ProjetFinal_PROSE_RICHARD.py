@@ -210,9 +210,9 @@ def moveboat(canvas, Grid, vehicle, direction):
 
 def validation(Grid, ships):
     global possibleBoat
+    global phase
     if phase != "init":
         return
-    global phase
     count = 0
     if IA_level.get() == 0:
         Indic.config(text="Vous devez choisir une difficulté d'IA\nAvant de jouer")
@@ -320,14 +320,14 @@ def finDuJeu():
             state = "gagné"
         else:
             state = "perdu"
+        add_grids(TirPlayer, old_Average_Pshots)
+        add_grids(playerGrid, old_Average_Pboat)
+        overwrite_file("AveragePshots.txt", TirPlayer)
+        overwrite_file("AveragePboat.txt", playerGrid)
         EndLabel = Label(endWindow, text="La partie est finie, vous avez " + state + " !\nA bientôt pour une nouvelle partie !")
         EndLabel.pack()
         quitter = Button(endWindow, text="Quitter", command=detruire)
         quitter.pack()
-        new_Average_Pshots = add_grids(TirPlayer, old_Average_Pshots)
-        new_Average_Pboat = add_grids(playerGrid, old_Average_Pboat)
-        overwrite_file("AveragePshots", new_Average_Pshots)
-        overwrite_file("AveragePboat", new_Average_Pboat)
 
 
 def detruire():
@@ -348,7 +348,7 @@ def initializeQueue(grid, min_proba):
 def add_grids(grid, to_Add_Grid):
     for x in range(len(grid)):
         for y in range(len(grid[x])):
-            grid[x][y] = (grid[x][y] + to_Add_Grid[x][y]) / 2
+            grid[x][y] = (grid[x][y] + to_Add_Grid[x][y]) / 2.0
 
 
 def overwrite_file(name, grid):
@@ -405,7 +405,7 @@ def coreTir(ships, x, y):
         # Raté
         display_case(Grilles, "Player", x, y, 1, nametag="fail")
         TirIA[x - 1][y - 1] += 1
-        return "fail"
+        return "fail", 0
 
 
 def detect_T_or_F(oldx, oldy):
@@ -429,7 +429,7 @@ def tirIA(ships, mode, oldx=0, oldy=0):
         while TirIA[x - 1][y - 1] == 1:
             x = randint(1, 10)
             y = randint(1, 10)
-        tirState, boatLiving = coreTir(ships, x, y)
+        state, boatLiving = coreTir(ships, x, y)
         if state == "touched":
             if IA_level.get() == 1:
                 tirIA(ships, "Random")
@@ -445,7 +445,7 @@ def tirIA(ships, mode, oldx=0, oldy=0):
         x = possibleBoat[0][0]
         y = possibleBoat[0][1]
         possibleBoat.pop(0)
-        tirState, boatLiving = coreTir(ships, x, y)
+        state, boatLiving = coreTir(ships, x, y)
         if boatLiving > 0:
             tirIA(ships, "Following", x, y)
         elif len(possibleBoat) > 0:
@@ -550,12 +550,11 @@ IAships_name = ["IACarrier", "IABattleship", "IACruiser", "IASubmarine", "IADest
 zeroGrid = initGrid()
 
 possibleBoat = 0
-old_Average_Pboat = txt_to_grid("AveragePboat")
-old_Average_Pshots = txt_to_grid("AveragePshots")
+old_Average_Pboat = txt_to_grid("AveragePboat.txt")
+old_Average_Pshots = txt_to_grid("AveragePshots.txt")
 
 # [state, x, y, left, right, down, up, indent]
 to_follow = [0] * 8
-to_follow[7] = 1
 
 """
 Début de def des données du joueur
