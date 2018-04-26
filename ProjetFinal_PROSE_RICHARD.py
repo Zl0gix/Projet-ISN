@@ -587,9 +587,9 @@ IASubmarine = [[1, 7, 1], [2, 7, 1], [3, 7, 1]]
 IADestroyer = [[1, 9, 1], [2, 9, 1]]
 IAships = [IACarrier, IABattleship, IACruiser, IASubmarine, IADestroyer]
 
-IAGrid = initGrid(IAGrid)
+IAGrid = initGrid()
 
-TirIA = initGrid(TirIA)
+TirIA = initGrid()
 
 # Fin de def des données de l'IA
 
