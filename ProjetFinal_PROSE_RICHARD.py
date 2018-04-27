@@ -231,13 +231,15 @@ def validation(Grid, ships):
         Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
         Boatlist.selection_clear(0, END)
         if IA_level.get() == 1:
-            oui
+            set_IA_Boats(IAships)
         elif IA_level.get() == 2:
-            oui
-        elif IA_level.get() == 3:
-            possibleBoat = convert_proba_to_coord(old_Average_Pboat, 0.5)
             for i in range(len(IA_ships)):
                 randomAssign(IAGrid, IA_ships[i])
+        elif IA_level.get() == 3:
+            possibleBoat = initializeQueue(old_Average_Pboat, 0.5, 1)
+            possibleSafe = initializeQueue(old_Average_Pshot, 0.5, 2)
+            for i in range(len(IA_ships)):
+                randomAssign(IAGrid, IA_ships[i], possibleSafe)
     else:
         Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
@@ -348,12 +350,16 @@ def detruire():
     debugWindow.destroy()
 
 
-def initializeQueue(grid, min_proba):
+def initializeQueue(grid, proba, mode):
     liste = []
     for x in range(len(grid)):
         for y in range(len(grid[x])):
-            if grid[x][y] >= min_proba:
-                liste.append([x, y])
+            if mode == 1:
+                if grid[x][y] >= proba:
+                    liste.append([x, y])
+            elif mode == 2:
+                if grid[x][y] <= proba:
+                    liste.append([x, y])
     return liste
 
 
@@ -383,9 +389,27 @@ def grid_to_txt(grid):
     return to_insert
 
 
-def set_IA_Boats():
-    # insérer le sélectionneur de positions
-    oui
+def set_IA_Boats(IAships):
+    position = randint(1, 10)
+    file = open("Placements")
+    for i in range(position):
+        ligne = file.readline
+    file.close()
+    liste = [0, 0, 0, 0, 0]
+    liste[0] = ligne[:10]
+    liste[1] = ligne[10:18]
+    liste[2] = ligne[18:24]
+    liste[3] = ligne[24:30]
+    liste[4] = ligne[30:]
+    for i in range(5):
+        print liste[i]
+    for b in range(len(IAships)):
+        a = 0
+        for p in range(len(IAships[b])):
+            IAships[b][p][0] = liste[b][a]
+            a += 1
+            IAships[b][p][1] = liste[b][a]
+            a += 1
 
 
 def coreTir(ships, x, y):
@@ -548,7 +572,7 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                         tirIA(ships, 'Random')
 
 
-def randomAssign(boats, preciseBoat):
+def randomAssign(boats, preciseBoat, liste=[]):
     final_dir = ""
     possible_dir = [0, 0, 0, 0]  # left/right/down/up
     mainx = randint(0, 9)
@@ -556,6 +580,14 @@ def randomAssign(boats, preciseBoat):
     while boats[mainx][mainy] == 1:
         mainx = randint(0, 9)
         mainy = randint(0, 9)
+    if liste != []:
+        mainx = liste[0][0]
+        mainy = liste[0][1]
+        liste.pop(0)
+        while boats[mainx][mainy] == 1:
+            mainx = liste[0][0]
+            mainy = liste[0][1]
+            liste.pop(0)
     if (0 <= mainx + len(preciseBoat) <= 9):
         possible_dir[0] = 1
     if (0 <= mainx - len(preciseBoat) <= 9):
@@ -587,7 +619,7 @@ def randomAssign(boats, preciseBoat):
         if (i == 3) and (count == 3):
             final_dir = i
     if count == 4:
-        randomAssign(boats, preciseBoat)
+        randomAssign(boats, preciseBoat, liste)
     else:
         if count != 3:
             final_dir = stock[randint(0, (len(stock) - 1))]
