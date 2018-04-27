@@ -230,8 +230,14 @@ def validation(Grid, ships):
         Indic.config(text="Bateaux verouillés\nLa partie commence !" + "\n vous avez choisis l'IA " + difficulte)
         Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
         Boatlist.selection_clear(0, END)
-        if IA_level.get() == 3:
+        if IA_level.get() == 1:
+            oui
+        elif IA_level.get() == 2:
+            oui
+        elif IA_level.get() == 3:
             possibleBoat = convert_proba_to_coord(old_Average_Pboat, 0.5)
+            for i in range(len(IA_ships)):
+                randomAssign(IAGrid, IA_ships[i])
     else:
         Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
@@ -320,10 +326,16 @@ def finDuJeu():
             state = "gagné"
         else:
             state = "perdu"
-        add_grids(TirPlayer, old_Average_Pshots)
-        add_grids(playerGrid, old_Average_Pboat)
-        overwrite_file("AveragePshots.txt", TirPlayer)
-        overwrite_file("AveragePboat.txt", playerGrid)
+        if old_Average_Pboat == zeroGrid:
+            overwrite_file("AveragePshots.txt", TirPlayer)
+        else:
+            add_grids(TirPlayer, old_Average_Pshots)
+            overwrite_file("AveragePshots.txt", TirPlayer)
+        if old_Average_Pshots == zeroGrid:
+            overwrite_file("AveragePboat.txt", playerGrid)
+        else:
+            add_grids(playerGrid, old_Average_Pboat)
+            overwrite_file("AveragePboat.txt", playerGrid)
         EndLabel = Label(endWindow, text="La partie est finie, vous avez " + state + " !\nA bientôt pour une nouvelle partie !")
         EndLabel.pack()
         quitter = Button(endWindow, text="Quitter", command=detruire)
@@ -536,12 +548,66 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                         tirIA(ships, 'Random')
 
 
+def randomAssign(boats, preciseBoat):
+    final_dir = ""
+    possible_dir = [0, 0, 0, 0]  # left/right/down/up
+    mainx = randint(0, 9)
+    mainy = randint(0, 9)
+    while boats[mainx][mainy] == 1:
+        mainx = randint(0, 9)
+        mainy = randint(0, 9)
+    if (0 <= mainx + len(preciseBoat) <= 9):
+        possible_dir[0] = 1
+    if (0 <= mainx - len(preciseBoat) <= 9):
+        possible_dir[1] = -1
+    if (0 <= mainy + len(preciseBoat) <= 9):
+        possible_dir[2] = 1
+    if (0 <= mainy - len(preciseBoat) <= 9):
+        possible_dir[3] = -1
+    print mainx
+    print mainy
+    print possible_dir
+    for indent in range(len(preciseBoat)):
+        print "indent = ", indent
+        for direct in range(4):
+            if possible_dir[direct] != 0:
+                print "  direct = ", direct
+                print " bordel de x = ", indent * r_offset[direct][0]
+                print " bordel de y = ", indent * r_offset[direct][1]
+                if boats[mainx + (indent * r_offset[direct][0])][mainy + (indent * r_offset[direct][1])] == 1:
+                    possible_dir[direct] = 0
+    print possible_dir
+    count = 0
+    stock = []
+    for i in range(4):
+        if possible_dir[i] != 0:
+            stock.append(i)
+        else:
+            count += 1
+        if (i == 3) and (count == 3):
+            final_dir = i
+    if count == 4:
+        randomAssign(boats, preciseBoat)
+    else:
+        if count != 3:
+            final_dir = stock[randint(0, (len(stock) - 1))]
+        print "final_dir = ", final_dir
+        for i in range(len(preciseBoat)):
+            preciseBoat[i][0] = mainx + (i * r_offset[final_dir][0]) + 1
+            preciseBoat[i][1] = mainy + (i * r_offset[final_dir][1]) + 1
+    for p in range(len(preciseBoat)):
+            posx = preciseBoat[p][0]
+            posy = preciseBoat[p][1]
+            boats[posx - 1][posy - 1] = 1
+
+
 numbers = range(1, 11)
 lettres = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 reversed_Lettres = ["J", "I", "H", "G", "F", "E", "D", "C", "B", "A"]
 
 fleches = ['Left', 'Right', 'Down', 'Up', "Rotate"]
 offset = [[-1, 0], [1, 0], [0, 1], [0, -1], "rotation"]
+r_offset = [[1, 0], [-1, 0], [0, 1], [0, -1]]
 directions = [[True, "Maybe", False, False], ["Maybe", True, False, False], [False, False, True, "Maybe"], [False, False, "Maybe", True]]
 
 ships_name = ["Carrier", "Battleship", "Cruiser", "Submarine", "Destroyer"]
@@ -713,10 +779,10 @@ fenetre.mainloop()
 """
 Il reste :
     - IA lvl 1 : positions préenregistrées
-    - IA lvl 2 : + de positions
-    - IA lvl 3 : Valentin trouve une solution miracle sinon aléatoire selon algo bullshit sur les bords
+    - IA lvl 2 : aléatoire
+    - IA lvl 3 : alétoire en focntion des anciens tir
 
-    - les bateaux de l'IA
+    - Epurer les anciens tirs
 
 Amélioration :
     - carré en rouge quand superpos ? ou pas, ce serait un eu chiant quand meme
