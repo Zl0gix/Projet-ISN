@@ -209,8 +209,7 @@ def moveboat(canvas, Grid, vehicle, direction):
 
 
 def validation(Grid, ships):
-    global possibleBoat
-    global phase
+    global possibleBoat, possibleSafe, IAGrid, phase, IAships
     if phase != "init":
         return
     count = 0
@@ -230,16 +229,20 @@ def validation(Grid, ships):
         Indic.config(text="Bateaux verouillés\nLa partie commence !" + "\n vous avez choisis l'IA " + difficulte)
         Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
         Boatlist.selection_clear(0, END)
+        IAGrid = initGrid()
         if IA_level.get() == 1:
             set_IA_Boats(IAships)
+            init_ships_Grids(IAships, IAGrid)
         elif IA_level.get() == 2:
-            for i in range(len(IA_ships)):
-                randomAssign(IAGrid, IA_ships[i])
+            for i in range(len(IAships)):
+                randomAssign(IAGrid, IAships[i])
+            init_ships_Grids(IAships, IAGrid)
         elif IA_level.get() == 3:
             possibleBoat = initializeQueue(old_Average_Pboat, 0.5, 1)
             possibleSafe = initializeQueue(old_Average_Pshot, 0.5, 2)
             for i in range(len(IA_ships)):
-                randomAssign(IAGrid, IA_ships[i], possibleSafe)
+                randomAssign(IAGrid, IAships[i], possibleSafe)
+            init_ships_Grids(IAships, IAGrid)
     else:
         Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
@@ -391,9 +394,9 @@ def grid_to_txt(grid):
 
 def set_IA_Boats(IAships):
     position = randint(1, 10)
-    file = open("Placements")
+    file = open("Placements.txt", "r")
     for i in range(position):
-        ligne = file.readline
+        ligne = file.readline()
     file.close()
     liste = [0, 0, 0, 0, 0]
     liste[0] = ligne[:10]
@@ -406,9 +409,9 @@ def set_IA_Boats(IAships):
     for b in range(len(IAships)):
         a = 0
         for p in range(len(IAships[b])):
-            IAships[b][p][0] = liste[b][a]
+            IAships[b][p][0] = int(liste[b][a]) + 1
             a += 1
-            IAships[b][p][1] = liste[b][a]
+            IAships[b][p][1] = int(liste[b][a]) + 1
             a += 1
 
 
@@ -494,9 +497,9 @@ def tirIA(ships, mode, oldx=0, oldy=0):
             detect_T_or_F(oldx, oldy)
             direction = randint(3, 6)
             while to_follow[direction] is False:
-                direction = randint(0, 3)
-            x = oldx + offset[direction + 3][0]
-            y = oldy + offset[direction + 3][1]
+                direction = randint(3, 6)
+            x = oldx + offset[direction - 3][0]
+            y = oldy + offset[direction - 3][1]
             state, boatLiving = coreTir(ships, x, y)
             if state == "fail":
                 to_follow[direction] = False
@@ -647,6 +650,7 @@ IAships_name = ["IACarrier", "IABattleship", "IACruiser", "IASubmarine", "IADest
 
 zeroGrid = initGrid()
 
+possibleSafe = 0
 possibleBoat = 0
 old_Average_Pboat = txt_to_grid("AveragePboat.txt")
 old_Average_Pshots = txt_to_grid("AveragePshots.txt")
