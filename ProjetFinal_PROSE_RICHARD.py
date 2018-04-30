@@ -243,6 +243,8 @@ def validation(Grid, ships):
             for i in range(len(IA_ships)):
                 randomAssign(IAGrid, IAships[i], possibleSafe)
             init_ships_Grids(IAships, IAGrid)
+        IA_f_Grid.set(pformat(IAGrid))
+        IA_f_ships.set(pformat(IAships))
     else:
         Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
@@ -404,8 +406,6 @@ def set_IA_Boats(IAships):
     liste[2] = ligne[18:24]
     liste[3] = ligne[24:30]
     liste[4] = ligne[30:]
-    for i in range(5):
-        print liste[i]
     for b in range(len(IAships)):
         a = 0
         for p in range(len(IAships[b])):
@@ -484,13 +484,13 @@ def tirIA(ships, mode, oldx=0, oldy=0):
         x = possibleBoat[0][0]
         y = possibleBoat[0][1]
         possibleBoat.pop(0)
+        IA_3_Queue.set(pformat(possibleBoat))
         state, boatLiving = coreTir(ships, x, y)
         if boatLiving > 0:
             tirIA(ships, "Following", x, y)
         elif len(possibleBoat) > 0:
             tirIA(ships, "Intelligent")
     elif mode == "Following":
-        to_follow[7] += 1
         if to_follow[0] == 0:
             to_follow[1] = oldx
             to_follow[2] = oldy
@@ -500,7 +500,14 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                 direction = randint(3, 6)
             x = oldx + offset[direction - 3][0]
             y = oldy + offset[direction - 3][1]
+            while TirIA[x][y] == 1:
+                to_follow[direction] = False
+                while to_follow[direction] is False:
+                    direction = randint(3, 6)
+                x = oldx + offset[direction - 3][0]
+                y = oldy + offset[direction - 3][1]
             state, boatLiving = coreTir(ships, x, y)
+            to_follow[7] += 1
             if state == "fail":
                 to_follow[direction] = False
                 to_follow[0] = 1
@@ -512,14 +519,19 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                     for i in range(4):
                         if to_follow[3 + i] == 0:
                             to_follow[3 + i] = True
+                    to_follow[7] += 1
+                IA_following.set(pformat(to_follow))
             elif boatLiving > 0:
+                to_follow[0] = 1
                 for i in range(4):
                     to_follow[3 + i] = directions[direction - 3][i]
                 detect_T_or_F(oldx, oldy)
+                IA_following.set(pformat(to_follow))
                 tirIA(ships, "Following", oldx, oldy)
             else:
                 for i in range(len(to_follow)):
                     to_follow[i] = 0
+                    IA_following.set(pformat(to_follow))
                 if IA_level.get() == 2:
                     tirIA(ships, "Random")
                 elif IA_level.get() == 3:
@@ -532,28 +544,34 @@ def tirIA(ships, mode, oldx=0, oldy=0):
             for i in range(4):
                 if to_follow[3 + i] is True:
                     direction = i
+                    to_follow[8] = True
             if direction == -1:
                 for i in range(4):
                     if to_follow[3 + i] == "Maybe":
                         direction = i
+                        if to_follow[8] is True:
+                            to_follow[7] = 1
+                        to_follow[8] = "Maybe"
             if direction == -1:
                 direction = randint(3, 6)
                 while to_follow[direction] is False:
-                    direction = randint(0, 3)
-            x = oldx + (to_follow[7] * offset[direction + 3][0])
-            y = oldy + (to_follow[7] * offset[direction + 3][1])
+                    direction = randint(3, 6)
+            x = oldx + (to_follow[7] * offset[direction - 3][0])
+            y = oldy + (to_follow[7] * offset[direction - 3][1])
             state, boatLiving = coreTir(ships, x, y)
             if state == "fail":
-                to_follow[3 + direction] = False
-                count = 0
-                for i in range(4):
-                    if to_follow[i + 3] is False:
-                        count += 1
-                if count == 3:
-                    for i in range(4):
-                        if to_follow[3 + i] == 0:
-                            to_follow[3 + i] = True
+                to_follow[direction] = False
+                # count = 0
+                # for i in range(4):
+                #     if to_follow[i + 3] is False:
+                #         count += 1
+                # if count == 3:
+                #     for i in range(4):
+                #         if to_follow[3 + i] == 0:
+                #             to_follow[3 + i] = True
+                IA_following.set(pformat(to_follow))
             elif boatLiving > 0:
+                to_follow[7] += 1
                 count = 0
                 for i in range(4):
                     if (to_follow[3 + i] is True) or (to_follow[3 + i] == "Maybe"):
@@ -562,10 +580,12 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                     for i in range(4):
                         to_follow[3 + i] = directions[direction - 3][i]
                     detect_T_or_F(oldx, oldy)
-                tirIA(ships, "Following")
+                IA_following.set(pformat(to_follow))
+                tirIA(ships, "Following", oldx, oldy)
             else:
                 for i in range(len(to_follow)):
                     to_follow[i] = 0
+                IA_following.set(pformat(to_follow))
                 if IA_level.get() == 2:
                     tirIA(ships, "Random")
                 elif IA_level.get() == 3:
@@ -599,19 +619,11 @@ def randomAssign(boats, preciseBoat, liste=[]):
         possible_dir[2] = 1
     if (0 <= mainy - len(preciseBoat) <= 9):
         possible_dir[3] = -1
-    print mainx
-    print mainy
-    print possible_dir
     for indent in range(len(preciseBoat)):
-        print "indent = ", indent
         for direct in range(4):
             if possible_dir[direct] != 0:
-                print "  direct = ", direct
-                print " bordel de x = ", indent * r_offset[direct][0]
-                print " bordel de y = ", indent * r_offset[direct][1]
                 if boats[mainx + (indent * r_offset[direct][0])][mainy + (indent * r_offset[direct][1])] == 1:
                     possible_dir[direct] = 0
-    print possible_dir
     count = 0
     stock = []
     for i in range(4):
@@ -626,7 +638,6 @@ def randomAssign(boats, preciseBoat, liste=[]):
     else:
         if count != 3:
             final_dir = stock[randint(0, (len(stock) - 1))]
-        print "final_dir = ", final_dir
         for i in range(len(preciseBoat)):
             preciseBoat[i][0] = mainx + (i * r_offset[final_dir][0]) + 1
             preciseBoat[i][1] = mainy + (i * r_offset[final_dir][1]) + 1
@@ -655,8 +666,8 @@ possibleBoat = 0
 old_Average_Pboat = txt_to_grid("AveragePboat.txt")
 old_Average_Pshots = txt_to_grid("AveragePshots.txt")
 
-# [state, x, y, left, right, down, up, indent]
-to_follow = [0] * 8
+# [state, x, y, left, right, down, up, indent, last]
+to_follow = [0] * 9
 
 """
 Début de def des données du joueur
