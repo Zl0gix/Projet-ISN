@@ -417,6 +417,7 @@ def set_IA_Boats(IAships):
 
 def coreTir(ships, x, y):
     global TirIA
+    print "Tir déclaré en x=", x, "et y=", y
     if playerGrid[x - 1][y - 1] == 1:
         # touché
         for b in range(len(ships)):
@@ -444,6 +445,7 @@ def coreTir(ships, x, y):
         # Raté
         display_case(Grilles, "Player", x, y, 1, nametag="fail")
         TirIA[x - 1][y - 1] += 1
+        IA_f_shots.set(pformat(TirIA))
         return "fail", 0
 
 
@@ -500,13 +502,16 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                 direction = randint(3, 6)
             x = oldx + offset[direction - 3][0]
             y = oldy + offset[direction - 3][1]
-            while TirIA[x][y] == 1:
+            while (TirIA[x][y] == 1) or (not(1 <= x <= 10)) or (not(1 <= y <= 10)):
                 to_follow[direction] = False
                 while to_follow[direction] is False:
                     direction = randint(3, 6)
                 x = oldx + offset[direction - 3][0]
                 y = oldy + offset[direction - 3][1]
+            print "    state =", to_follow
+            print "    direction choisie =", fleches[direction - 3]
             state, boatLiving = coreTir(ships, x, y)
+            print "boatLiving =", boatLiving
             to_follow[7] += 1
             if state == "fail":
                 to_follow[direction] = False
@@ -521,12 +526,14 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                             to_follow[3 + i] = True
                     to_follow[7] += 1
                 IA_following.set(pformat(to_follow))
+                print "    state =", to_follow
             elif boatLiving > 0:
                 to_follow[0] = 1
                 for i in range(4):
                     to_follow[3 + i] = directions[direction - 3][i]
                 detect_T_or_F(oldx, oldy)
                 IA_following.set(pformat(to_follow))
+                print "    state =", to_follow
                 tirIA(ships, "Following", oldx, oldy)
             else:
                 for i in range(len(to_follow)):
@@ -540,15 +547,18 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                     else:
                         tirIA(ships, 'Random')
         else:
+            if (oldx == 0) or (oldy == 0):
+                oldx = to_follow[1]
+                oldy = to_follow[2]
             direction = -1
             for i in range(4):
                 if to_follow[3 + i] is True:
-                    direction = i
+                    direction = 3 + i
                     to_follow[8] = True
             if direction == -1:
                 for i in range(4):
                     if to_follow[3 + i] == "Maybe":
-                        direction = i
+                        direction = 3 + i
                         if to_follow[8] is True:
                             to_follow[7] = 1
                         to_follow[8] = "Maybe"
@@ -558,7 +568,11 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                     direction = randint(3, 6)
             x = oldx + (to_follow[7] * offset[direction - 3][0])
             y = oldy + (to_follow[7] * offset[direction - 3][1])
+            if (TirIA[x][y] == 1) or (not(1 <= x <= 10)) or (not(1 <= y <= 10)):
+                to_follow[direction] = False
+                return
             state, boatLiving = coreTir(ships, x, y)
+            print "boatLiving =", boatLiving
             if state == "fail":
                 to_follow[direction] = False
                 # count = 0
@@ -570,6 +584,7 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                 #         if to_follow[3 + i] == 0:
                 #             to_follow[3 + i] = True
                 IA_following.set(pformat(to_follow))
+                print "    state =", to_follow
             elif boatLiving > 0:
                 to_follow[7] += 1
                 count = 0
@@ -581,6 +596,7 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                         to_follow[3 + i] = directions[direction - 3][i]
                     detect_T_or_F(oldx, oldy)
                 IA_following.set(pformat(to_follow))
+                print "    state =", to_follow
                 tirIA(ships, "Following", oldx, oldy)
             else:
                 for i in range(len(to_follow)):
