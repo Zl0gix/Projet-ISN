@@ -7,7 +7,7 @@ import os.path
 phase = "init"  # les autres phases possibles sont : "in-game" / "end-game"
 
 
-def initGrid():
+def initGrid(): # Retourne une liste de liste de 10*10
     liste = [0] * 10
     temp = liste[:]
     for i in range(len(liste)):
@@ -15,7 +15,7 @@ def initGrid():
     return liste
 
 
-def nb_lignes(name):
+def nb_lignes(name): # retourne le nombre de lignes d'un fichier
     file = open(name, "r")
     temp = file.readline()
     count = 0
@@ -26,7 +26,7 @@ def nb_lignes(name):
     return count
 
 
-def txt_to_grid(name):
+def txt_to_grid(name): # Retourne chaque caractère d'un fichier formaté (d'une manière particulière) dans une liste de liste
     if (os.path.exists(name)) and (os.path.getsize(name) > 0):
         n_lignes = nb_lignes(name)
         liste = [[0]]
@@ -54,7 +54,7 @@ def txt_to_grid(name):
         return zeroGrid
 
 
-def determineTir():
+def determineTir(): # Determine en fonction du niveau de l'ia et de l'avancement du jeu quel mode de tir utiliser
     if IA_level.get() == 1:
         tirIA(ships, "Random")
     elif IA_level.get() == 2:
@@ -78,7 +78,7 @@ def tir_joueur(Grid, car, IA_boats):
             assert 2 <= len(car) <= 3
             lettre = car[0].upper()
             Nombre = car[1:]
-            # Conversion du car lettre en nombre
+            # Conversion du caractère lettre dans ex:"A10" en nombre
             for i in range(10):
                 if lettre == lettres[i]:
                     x = i
@@ -88,7 +88,7 @@ def tir_joueur(Grid, car, IA_boats):
             Indic.config(text="Coordonées acceptées")
             ship_tag = ""
             TirPlayer[x][y] = 1
-            if Grid[x][y] == 1:
+            if Grid[x][y] == 1: # Si un bateau de l'ia est présent aux coordonnées du tir:
                 boat_index = 0
                 for b in range(len(IA_boats)):
                     for p in range(len(IA_boats[b])):
@@ -449,29 +449,29 @@ def coreTir(ships, x, y):
         return "fail", 0
 
 
-def detect_T_or_F(oldx, oldy):
+def detect_T_or_F(x, y):
     global to_follow
-    if oldy == 1:
+    if y == 1 or TirIA[x-1][y-2] == 1:
         to_follow[6] = False
-    if oldy == 10:
+    if y == 10 or TirIA[x-1][y] == 1:
         to_follow[5] = False
-    if oldx == 1:
+    if x == 1 or TirIA[x-2][y-1] == 1:
         to_follow[3] = False
-    if oldx == 10:
+    if x == 10 or TirIA[x][y-1] == 1:
         to_follow[4] = False
 
 
 def tirIA(ships, mode, oldx=0, oldy=0):
     global possibleBoat
     global to_follow
-    if mode == "Random":
+    if mode == "Random": # On effectue un tir aléatoire
         x = randint(1, 10)
         y = randint(1, 10)
         while TirIA[x - 1][y - 1] == 1:
             x = randint(1, 10)
             y = randint(1, 10)
         state, boatLiving = coreTir(ships, x, y)
-        if state == "touched":
+        if state == "touched": # En fonction du niveau de l'ia et si le bateau est vivant on détermine si l'ia rejoue et de quelle manière
             if IA_level.get() == 1:
                 tirIA(ships, "Random")
             elif boatLiving > 0:
@@ -482,23 +482,39 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                 tirIA(ships, "Intelligent")
             else:
                 tirIA(ships, "random")
-    elif mode == "Intelligent":
-        x = possibleBoat[0][0]
-        y = possibleBoat[0][1]
-        possibleBoat.pop(0)
+    elif mode == "Intelligent": # Ce mode de tir extrait des parties précédentes les positions les plus probables pour les bateaux d'un joueur
+        x = -1
+        while (x == -1) or (TirIA[x-1][y-1] == 1): # Ici on l'empêche d'extraire des coordonnées déjà utilisées
+            x = possibleBoat[0][0]
+            y = possibleBoat[0][1]
+            possibleBoat.pop(0)
         IA_3_Queue.set(pformat(possibleBoat))
         state, boatLiving = coreTir(ships, x, y)
         if boatLiving > 0:
             tirIA(ships, "Following", x, y)
+        elif state == "fail":
+            return
         elif len(possibleBoat) > 0:
             tirIA(ships, "Intelligent")
+        else:
+            tirIA(ships, "Random")
     elif mode == "Following":
-        if to_follow[0] == 0:
+        if to_follow[0] == 0: # Si c'est le début d'un tir suivi alors on execute cette partie du script :
             to_follow[1] = oldx
             to_follow[2] = oldy
             detect_T_or_F(oldx, oldy)
             direction = randint(3, 6)
-            while to_follow[direction] is False:
+            count = 0
+            for i in range(4): # Si toutes les directions possibles sont fausses alors on sort de la fonction
+                if to_follow[3 + i] is False:
+                    count += 1
+            if count == 4:
+                for i in range (len(to_follow)):
+                    to_follow[i] = 0
+                print "j'etais bloque"
+                # tirIA(ships, "Random")
+                return
+            while to_follow[direction] is False: # Si la direction choisie premièrement est impossible, alors on rééssaye jusqu'a ce que ça soit possible
                 direction = randint(3, 6)
             x = oldx + offset[direction - 3][0]
             y = oldy + offset[direction - 3][1]
@@ -511,6 +527,7 @@ def tirIA(ships, mode, oldx=0, oldy=0):
             print "    state =", to_follow
             print "    direction choisie =", fleches[direction - 3]
             state, boatLiving = coreTir(ships, x, y)
+            to_follow[9] = direction
             print "boatLiving =", boatLiving
             to_follow[7] += 1
             if state == "fail":
@@ -550,6 +567,16 @@ def tirIA(ships, mode, oldx=0, oldy=0):
             if (oldx == 0) or (oldy == 0):
                 oldx = to_follow[1]
                 oldy = to_follow[2]
+            x = oldx + ((to_follow[7]-1) * offset[to_follow[9] - 3][0])
+            y = oldy + ((to_follow[7]-1) * offset[to_follow[9] - 3][1])
+            detect_T_or_F(x, y)
+            count = 0
+            if count == 4:
+                for i in range (len(to_follow)):
+                    to_follow[i] = 0
+                print "j'etais bloque"
+                # tirIA(ships, "Random")
+                return
             direction = -1
             for i in range(4):
                 if to_follow[3 + i] is True:
@@ -566,12 +593,14 @@ def tirIA(ships, mode, oldx=0, oldy=0):
                 direction = randint(3, 6)
                 while to_follow[direction] is False:
                     direction = randint(3, 6)
+                    to_follow[8] = 0
             x = oldx + (to_follow[7] * offset[direction - 3][0])
             y = oldy + (to_follow[7] * offset[direction - 3][1])
             if (TirIA[x][y] == 1) or (not(1 <= x <= 10)) or (not(1 <= y <= 10)):
                 to_follow[direction] = False
                 return
             state, boatLiving = coreTir(ships, x, y)
+            to_follow[9] = direction
             print "boatLiving =", boatLiving
             if state == "fail":
                 to_follow[direction] = False
@@ -682,8 +711,8 @@ possibleBoat = 0
 old_Average_Pboat = txt_to_grid("AveragePboat.txt")
 old_Average_Pshots = txt_to_grid("AveragePshots.txt")
 
-# [state, x, y, left, right, down, up, indent, last]
-to_follow = [0] * 9
+# [state, x, y, left, right, down, up, indent, last, lastdir]
+to_follow = [0] * 10
 
 """
 Début de def des données du joueur
