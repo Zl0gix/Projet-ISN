@@ -244,9 +244,11 @@ def validation(Grid, ships):
                 randomAssign(IAGrid, IAships[i])
             init_ships_Grids(IAships, IAGrid)
         elif IA_level.get() == 3:
-            possibleBoat = initializeQueue(old_Average_Pboat, 0.5, 1)
-            possibleSafe = initializeQueue(old_Average_Pshot, 0.5, 2)
-            for i in range(len(IA_ships)):
+            possibleBoat = initializeQueue(old_Average_Pboat, 0.3, 1)
+            IA_3_Queue.set(pformat(possibleBoat))
+            # possibleSafe = initializeQueue(old_Average_Pshots, 0.3, 2)
+            possibleSafe = []
+            for i in range(len(IAships)):
                 randomAssign(IAGrid, IAships[i], possibleSafe)
             init_ships_Grids(IAships, IAGrid)
         IA_f_Grid.set(pformat(IAGrid))
@@ -446,7 +448,6 @@ def coreTir(ships, x, y):
                 finDuJeu()
         TirsIA[x - 1][y - 1] += 1
         IA_f_shots.set(pformat(TirsIA))
-        print "valid =", valid
         return "touched", valid
     else:
         # Raté
@@ -476,7 +477,7 @@ def detect_dir(x, y, oldShots, border, nextHit, calcul):
     if nextHit != 0:
         x = to_follow[1] + to_follow[7] * offset[nextHit][0]
         y = to_follow[1] + to_follow[7] * offset[nextHit][1]
-        if TirsIA[x - 1][y - 1] == 1:
+        if TirsIA[x - 1][y - 1] == 1 or not(1 <= x <= 10) or not(1 <= y <= 10):
             to_follow[nextHit + 3] = False
     if calcul == 1:
         count = []
@@ -537,8 +538,8 @@ def tirIA(ships, mode, primX=0, primY=0):
     elif mode == "Intelligent":  # Ce mode de tir extrait des parties précédentes les positions les plus probables pour les bateaux d'un joueur
         x = -1
         while (x == -1) or (TirsIA[x - 1][y - 1] == 1):  # Ici on l'empêche d'extraire des coordonnées déjà utilisées
-            x = possibleBoat[0][0]
-            y = possibleBoat[0][1]
+            x = possibleBoat[0][0] + 1
+            y = possibleBoat[0][1] + 1
             possibleBoat.pop(0)
         IA_3_Queue.set(pformat(possibleBoat))
         state, boatLiving = coreTir(ships, x, y)
@@ -552,7 +553,6 @@ def tirIA(ships, mode, primX=0, primY=0):
             tirIA(ships, "Random")
     elif mode == "Following":
         if to_follow[0] == 0:
-            print "mode de follow = 0"
             scan_result = detect_dir(primX, primY, 1, 1, 0, 1)
             if scan_result != "Impossible":
                 to_follow[1] = primX
@@ -573,14 +573,12 @@ def tirIA(ships, mode, primX=0, primY=0):
                         tirIA(ships, 'Random')
                 return
         if to_follow[0] == 1:
-            print "mode de follow = 1"
             direction = randint(0, 3)
             while to_follow[direction + 3] is False:
                 direction = randint(0, 3)
             x = to_follow[1] + to_follow[7] * offset[direction][0]
             y = to_follow[2] + to_follow[7] * offset[direction][1]
             state, boatLiving = coreTir(ships, x, y)
-            print "Boatliving =", boatLiving
             if state == "fail":
                 to_follow[direction + 3] = False
                 scan_result = detect_dir(0, 0, 0, 0, 0, 1)
@@ -588,7 +586,7 @@ def tirIA(ships, mode, primX=0, primY=0):
             elif boatLiving > 0:
                 to_follow[7] += 1
                 to_follow[direction + 3] = True
-                scan_result = detect_dir(0, 0, 0, 0, direction, 1)
+                scan_result = detect_dir(x, y, 0, 1, direction, 1)
                 to_follow[0] = 2
                 IA_following.set(pformat(to_follow))
                 tirIA(ships, "Following")
@@ -603,7 +601,6 @@ def tirIA(ships, mode, primX=0, primY=0):
                     else:
                         tirIA(ships, 'Random')
         elif to_follow[0] == 2:
-            print "mode de follow = 2"
             direction = -1
             for i in range(4):
                 if to_follow[3 + i] is True:
@@ -619,13 +616,12 @@ def tirIA(ships, mode, primX=0, primY=0):
             x = to_follow[1] + to_follow[7] * offset[direction - 3][0]
             y = to_follow[2] + to_follow[7] * offset[direction - 3][1]
             state, boatLiving = coreTir(ships, x, y)
-            print "BoatLiving =", boatLiving
             if state == "fail":
                 to_follow[direction] = False
                 IA_following.set(pformat(to_follow))
             elif boatLiving > 0:
                 to_follow[7] += 1
-                scan_result = detect_dir(0, 0, 0, 0, 1, 0)
+                scan_result = detect_dir(x, y, 0, 1, 1, 0)
                 IA_following.set(pformat(to_follow))
                 tirIA(ships, "Following")
             else:
