@@ -71,7 +71,7 @@ def determineTir(): # Determine en fonction du niveau de l'ia et de l'avancement
             tirIA(ships, "Random")
 
 
-def tir_joueur(Grid, car, IA_boats):
+def tir_joueur(Grid, car, IA_boats): # Fonction de tir du joueur
     global TirPlayer
     if phase == "in-game":
         try:
@@ -97,8 +97,8 @@ def tir_joueur(Grid, car, IA_boats):
                 boat_index = 0
                 for b in range(len(IA_boats)):
                     for p in range(len(IA_boats[b])):
-                        if (IA_boats[b][p][0] == x + 1) and (IA_boats[b][p][1] == y + 1):
-                            if IA_boats[b][p][2] == 1:
+                        if (IA_boats[b][p][0] == x + 1) and (IA_boats[b][p][1] == y + 1): # Test de la présence d'un bateau
+                            if IA_boats[b][p][2] == 1: # Si le bateau n'a pas déjà été touché
                                 boat_index = b
                                 ship_tag = IAships_name[b]
                                 IA_boats[b][p][2] = 0
@@ -115,6 +115,7 @@ def tir_joueur(Grid, car, IA_boats):
                 if pts_coule == 0:
                     Grilles.itemconfig(ship_tag, fill="red")
                     Indic.config(text="Vous avez coulé le " + str(ship_tag)[2:] + " de votre adversaire !")
+                    # Bateau coulé
                     finDuJeu()
             else:
                 display_case(Grilles, "IA", x + 1, y + 1, 1, nametag="fail")
@@ -122,7 +123,7 @@ def tir_joueur(Grid, car, IA_boats):
                 determineTir()
         except AssertionError:
             Indic.config(text="Les coordonées du tir ne sont pas valides\n(elles doivent être de la forme : LXX)\n(avec L une lettre et XX un nombre entre 1 et 10)")
-        if car == "annihilation":
+        if car == "annihilation": # Variable de destruction totale
             for l_item in lettres:
                 for n_item in range(1, 11):
                     tir_joueur(IAGrid, l_item + str(n_item), IAships)
@@ -134,11 +135,11 @@ def tir_joueur(Grid, car, IA_boats):
         Indic.config(text='Vous êtes encore en phase de placement des bateaux.\nPour commencer la bataille veuillez cliquer sur le bouton :\n"Début du combat"')
 
 
-def moveboat(canvas, Grid, vehicle, direction):
-    if phase == "init":
+def moveboat(canvas, Grid, vehicle, direction): # Fonction de déplacement de bateau
+    if phase == "init": # Test de la phase de jeu
         if len(vehicle) != 0:
             for i in range(len(ships_name)):
-                if vehicle[0] == i:
+                if vehicle[0] == i: # Détermination du bateau choisi pour être bougé
                     boat = ships[i]
             decal = []
             for i in range(5):
@@ -149,12 +150,14 @@ def moveboat(canvas, Grid, vehicle, direction):
                 testy = boat[0][1] + decal[1]
                 if (1 <= testx <= 10) and (1 <= testy <= 10):
                     if (1 <= boat[len(boat) - 1][0] + decal[0] <= 10) and (1 <= boat[len(boat) - 1][1] + decal[1] <= 10):
+                        # Test de position en bordure de map
                         for i in range(len(boat)):
                             x1 = boat[i][0]
                             y1 = boat[i][1]
                             Grid[x1 - 1][y1 - 1] -= 1
                             boat[i][0] += decal[0]
                             boat[i][1] += decal[1]
+                            # Déplacement du bateau pour chaque point de ce dernier
                             x2 = boat[i][0]
                             y2 = boat[i][1]
                             Grid[x2 - 1][y2 - 1] += 1
@@ -214,7 +217,7 @@ def moveboat(canvas, Grid, vehicle, direction):
             P_f_Grid.set(pformat(playerGrid))
 
 
-def validation(Grid, ships):
+def validation(Grid, ships): # Test de validation de la phase d'initialisation
     global possibleBoat, possibleSafe, IAGrid, phase, IAships
     if phase != "init":
         return
@@ -230,12 +233,12 @@ def validation(Grid, ships):
         phase = "in-game"
         diff = ["facile", "intermédiaire", "difficile"]
         for i in range(len(diff)):
-            if i == (IA_level.get() - 1):
+            if i == (IA_level.get() - 1): # Choix de la difficulté de l'IA
                 difficulte = diff[i]
         Indic.config(text="Bateaux verouillés\nLa partie commence !" + "\n vous avez choisi l'IA " + difficulte)
         Grilles.itemconfig(Boatlist.get(ACTIVE), fill='blue')
         Boatlist.selection_clear(0, END)
-        IAGrid = initGrid()
+        IAGrid = initGrid() # Positionnement des bateaux en fonction de la difficulté de l'IA
         if IA_level.get() == 1:
             set_IA_Boats(IAships)
             init_ships_Grids(IAships, IAGrid)
@@ -257,7 +260,7 @@ def validation(Grid, ships):
         Indic.config(text="Il y a " + str(count) + " points\nde superpositions")
 
 
-def saut_ligne(canvas, y, nb):
+def saut_ligne(canvas, y, nb): # Définition de l'interligne
     for i in range(nb):
         y += 40
         canvas.create_line(0, y, 430, y, tags="core")
@@ -265,7 +268,7 @@ def saut_ligne(canvas, y, nb):
     return y
 
 
-def trace_grid(canvas):
+def trace_grid(canvas): # Création de la grille
     canvas.create_rectangle(2, 0, 30, 830, fill='lightskyblue', tags="core")
     canvas.create_rectangle(2, 400, 430, 430, fill='lightskyblue', tags="core")
     # Colonnes :
@@ -287,7 +290,7 @@ def display_case(canvas, board, x, y, state, nametag=""):
     values = [0, 1, 2, 3, 4]
     colors = ['white', 'grey', 'blue', 'orange', 'red']
     for i in range(5):
-        if state == values[i]:
+        if state == values[i]: # Changement de la couleur du bateau en fonction de son état
             color = colors[i]
     x1, x2 = ((x - 1) * 40) + 1 + 30, (x * 40) - 1 + 30
     if board == "Player":
@@ -315,7 +318,7 @@ def boat_color(event):          # Permet de mettre en vert le bateau séléction
             Grilles.itemconfig(item, fill='blue')
 
 
-def init_ships_Grids(boat_tab, grid):
+def init_ships_Grids(boat_tab, grid): # Initialisation des grilles de position des bateaux
     for b in range(len(boat_tab)):
         for p in range(len(boat_tab[b])):
             posx = boat_tab[b][p][0]
@@ -323,7 +326,7 @@ def init_ships_Grids(boat_tab, grid):
             grid[posx - 1][posy - 1] = 1
 
 
-def finDuJeu():
+def finDuJeu(): # Création de la phase de fin de jeu
     global phase
     global endWindow
     joueur = 0
@@ -347,7 +350,7 @@ def finDuJeu():
             add_grids(TirPlayer, old_Average_Pshots)
             overwrite_file("AveragePshots.txt", TirPlayer)
         if old_Average_Pshots == zeroGrid:
-            overwrite_file("AveragePboat.txt", playerGrid)
+            overwrite_file("AveragePboat.txt", playerGrid) # Sauvegarde des résultats dans un fichier à l'aide de la commande « overwrite »
         else:
             add_grids(playerGrid, old_Average_Pboat)
             overwrite_file("AveragePboat.txt", playerGrid)
@@ -357,13 +360,13 @@ def finDuJeu():
         quitter.pack()
 
 
-def detruire():
+def detruire(): # Fonction de débug de l'interface
     fenetre.destroy()
     endWindow.destroy()
     debugWindow.destroy()
 
 
-def initializeQueue(grid, proba, mode):
+def initializeQueue(grid, proba, mode): # Initialisation de la fonction de sauvegarde de probas
     liste = []
     for x in range(len(grid)):
         for y in range(len(grid[x])):
@@ -382,13 +385,13 @@ def add_grids(grid, to_Add_Grid):
             grid[x][y] = (grid[x][y] + to_Add_Grid[x][y]) / 2.0
 
 
-def overwrite_file(name, grid):
+def overwrite_file(name, grid): # Fonction d'édition de fichier
     file = open(name, "w")
     file.write(grid_to_txt(grid))
     file.close()
 
 
-def grid_to_txt(grid):
+def grid_to_txt(grid): # Transfert les entiers de la grille en caratères
     to_insert = ""
     for x in range(len(grid)):
         for y in range(len(grid[x])):
@@ -402,7 +405,7 @@ def grid_to_txt(grid):
     return to_insert
 
 
-def set_IA_Boats(IAships):
+def set_IA_Boats(IAships): # Mise en place du positionnement de l'IA (position de 1 à 10)
     position = randint(1, 10)
     file = open("Placements.txt", "r")
     for i in range(position):
@@ -423,7 +426,7 @@ def set_IA_Boats(IAships):
             a += 1
 
 
-def coreTir(ships, x, y):
+def coreTir(ships, x, y): # Fonction de tir de l'IA
     global TirsIA
     print "Tir déclaré en x=", x, "et y=", y
     if playerGrid[x - 1][y - 1] == 1:
@@ -457,7 +460,7 @@ def coreTir(ships, x, y):
         return "fail", 0
 
 
-def detect_dir(x, y, oldShots, border, nextHit, calcul):
+def detect_dir(x, y, oldShots, border, nextHit, calcul): # Calcul de la validité d'un tir suivi
     global to_follow
     if oldShots == 1:
         for i in range(4):
@@ -465,7 +468,7 @@ def detect_dir(x, y, oldShots, border, nextHit, calcul):
             testY = y - 1 + offset[i][1]
             if not(0 <= testX <= 9) or not(0 <= testY <= 9) or TirsIA[testX][testY] == 1:
                 to_follow[3 + i] = False
-    if border == 1:
+    if border == 1: # Détection du bord
         if y == 1:
             to_follow[6] = False
         if y == 10:
